@@ -2189,6 +2189,22 @@ bool SceneView::keyPress( GafferUI::GadgetPtr gadget, const GafferUI::KeyEvent &
 			viewportGadget()->fitClippingPlanes( framingBound() );
 		}
 	}
+	else if( event.key == "P" && event.modifiers == KeyEvent::Control )
+	{
+		PathMatcher selection = m_sceneGadget->getSelection();
+		if( !selection.isEmpty() )
+		{
+			ContextAlgo::pin( getContext(), selection );
+		}
+	}
+	else if( event.key == "P" && (event.modifiers & KeyEvent::Control && event.modifiers & KeyEvent::Alt) )
+	{
+		ContextAlgo::clearPinning( getContext() );
+	}
+	else if( event.key == "P" && (event.modifiers & KeyEvent::Control && event.modifiers & KeyEvent::Shift) )
+	{
+		ContextAlgo::pin( getContext(), ContextAlgo::getExpandedPaths( getContext() ) );
+	}
 	else if( event.key == "Escape" )
 	{
 		m_sceneGadget->setPaused( true );

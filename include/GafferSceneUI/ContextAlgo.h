@@ -102,6 +102,26 @@ GAFFERSCENEUI_API IECore::PathMatcher expandDescendants( Gaffer::Context *contex
 /// Clears the currently expanded paths
 GAFFERSCENEUI_API void clearExpansion( Gaffer::Context *context );
 
+/// Path Pinning
+/// ============
+
+/// Pinned paths are locations considered to be always drawn in the Viewer, whether expanded or not
+GAFFERSCENEUI_API void setPinnedPaths( Gaffer::Context *context, const IECore::PathMatcher &paths );
+GAFFERSCENEUI_API IECore::PathMatcher getPinnedPaths( const Gaffer::Context *context );
+
+/// Returns true if the named context variable affects the result of `getPinnedPaths()`.
+/// This can be used from `Context::changedSignal()` to determine if the pinning has been
+/// changed.
+GAFFERSCENEUI_API bool affectsPinnedPaths( const IECore::InternedString &name );
+
+/// Appends paths to the current pinning, optionally adding all ancestor paths too.
+GAFFERSCENEUI_API void pin( Gaffer::Context *context, const IECore::PathMatcher &paths, bool pinAncestors = true );
+/// Removes paths to the current pinning, optionally adding all ancestor paths too.
+GAFFERSCENEUI_API void unpin( Gaffer::Context *context, const IECore::PathMatcher &paths, bool pinAncestors = true );
+
+/// Clears the currently pinned paths
+GAFFERSCENEUI_API void clearPinning( Gaffer::Context *context );
+
 /// Path Selection
 /// ==============
 

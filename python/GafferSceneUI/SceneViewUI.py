@@ -544,9 +544,10 @@ class _ExpansionPlugValueWidget( GafferUI.PlugValueWidget ) :
 	def __init__( self, plug, **kw ) :
 
 		menu = GafferUI.Menu( Gaffer.WeakMethod( self.__menuDefinition ), title="Expansion" )
-		menuButton = GafferUI.MenuButton( menu=menu, image = "expansion.png", hasFrame=False )
+		self.__menuButton = GafferUI.MenuButton( menu=menu, image = "expansion.png", hasFrame=False )
 
-		GafferUI.PlugValueWidget.__init__( self, menuButton, plug, **kw )
+		GafferUI.PlugValueWidget.__init__( self, self.__menuButton, plug, **kw )
+		plug.node()["in"].getInput().node().scriptNode().context().changedSignal().connect( Gaffer.WeakMethod( self.__updateFromContext ), scoped = False )
 
 	def hasLabel( self ) :
 
@@ -555,6 +556,19 @@ class _ExpansionPlugValueWidget( GafferUI.PlugValueWidget ) :
 	def _updateFromPlug( self ) :
 
 		pass
+
+	def __updateFromContext( self, context, name ) :
+
+		if not name.startswith( "ui:" ) :
+			return
+
+		# print( "UPDATED FROM CONTEXT!!", name )
+		pinnedPaths = GafferSceneUI.ContextAlgo.getPinnedPaths( context )
+		# print( pinnedPaths )
+		self.__menuButton.setImage(
+			"nodeSetStandardSet.png" if not pinnedPaths.isEmpty() else "expansion.png"
+		)
+		# pass
 
 	def __menuDefinition( self ) :
 
@@ -1055,12 +1069,61 @@ def __appendClippingPlaneMenuItems( menuDefinition, prefix, view, parentWidget )
 			}
 		)
 
+def __pinSelected( view ) :
+	
+	sceneGadget = view.viewportGadget().getPrimaryChild()
+	selection = sceneGadget.getSelection()
+
+	if not selection.isEmpty() :
+		GafferSceneUI.ContextAlgo.pin( sceneGadget.getContext(), selection )
+
+def __pinExpanded( view ) :
+
+	context = view.viewportGadget().getPrimaryChild().getContext()
+	GafferSceneUI.ContextAlgo.pin( context, GafferSceneUI.ContextAlgo.getExpandedPaths( context ) )
+
+def __clearPinning( view ) :
+
+	context = view.viewportGadget().getPrimaryChild().getContext()
+	GafferSceneUI.ContextAlgo.clearPinning( context )
+
+def __appendExpansionPinningMenuItems( menuDefinition, prefix, view, parentWidget ) :
+
+	sceneGadget = view.viewportGadget().getPrimaryChild()
+
+	menuDefinition.append(
+		prefix + "/Pin Selected",
+		{
+			"active" : not sceneGadget.getSelection().isEmpty(),
+			"command" : functools.partial( __pinSelected, view ),
+			"shortCut" : "Ctrl+P",
+		}
+	)
+
+	menuDefinition.append(
+		prefix + "/Pin Current Expansion",
+		{
+			"command" : functools.partial( __pinExpanded, view ),
+			"shortCut" : "Shift+Ctrl+P",
+		}
+	)
+
+	menuDefinition.append(
+		prefix + "/Clear Pinning",
+		{
+			"active" : not GafferSceneUI.ContextAlgo.getPinnedPaths( sceneGadget.getContext() ).isEmpty(),
+			"command" : functools.partial( __clearPinning, view ),
+			"shortCut" : "Ctrl+Alt+P",
+		}
+	)
+
 def __viewContextMenu( viewer, view, menuDefinition ) :
 
 	if not isinstance( view, GafferSceneUI.SceneView ) :
 		return False
 
 	__appendClippingPlaneMenuItems( menuDefinition, "/Clipping Planes", view, viewer )
+	__appendExpansionPinningMenuItems( menuDefinition, "/Expansion Pinning", view, viewer )
 
 GafferUI.Viewer.viewContextMenuSignal().connect( __viewContextMenu, scoped = False )
 

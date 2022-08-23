@@ -1680,7 +1680,7 @@ def buildImageCommand( source, target, env ) :
 		"--export-id={}".format( substitutions["id"] ),
 		"--export-width={:d}".format( substitutions["width"] ),
 		"--export-height={:d}".format( substitutions["height"] ),
-		"--export-background-opacity=0",
+		"--export-background-opacity=0.001",
 		os.path.abspath( svgFilename )
 	]
 	subprocess.check_call( [ env["INKSCAPE"] ] + args )

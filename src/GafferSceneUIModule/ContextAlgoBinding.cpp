@@ -102,6 +102,30 @@ std::string getLastSelectedPathWrapper( const Gaffer::Context *context )
 	return result;
 }
 
+void setPinnedPathsWrapper( Context &context, const IECore::PathMatcher &paths )
+{
+	IECorePython::ScopedGILRelease gilRelease;
+	setPinnedPaths( &context, paths );
+}
+
+void pinWrapper( Context &context, const IECore::PathMatcher &paths, bool pinAncestors )
+{
+	IECorePython::ScopedGILRelease gilRelease;
+	pin( &context, paths, pinAncestors );
+}
+
+void unpinWrapper( Context &context, const IECore::PathMatcher &paths, bool unpinAncestors )
+{
+	IECorePython::ScopedGILRelease gilRelease;
+	unpin( &context, paths, unpinAncestors );
+}
+
+void clearPinningWrapper( Context &context )
+{
+	IECorePython::ScopedGILRelease gilRelease;
+	clearPinning( &context );
+}
+
 } // namespace
 
 void GafferSceneUIModule::bindContextAlgo()
@@ -122,5 +146,10 @@ void GafferSceneUIModule::bindContextAlgo()
 	def( "setSelectedPaths", &setSelectedPathsWrapper );
 	def( "getSelectedPaths", &getSelectedPaths );
 	def( "affectsSelectedPaths", &affectsSelectedPaths );
-
+	def( "setPinnedPaths", &setPinnedPathsWrapper );
+	def( "getPinnedPaths", &getPinnedPaths );
+	def( "affectsPinnedPaths", &affectsPinnedPaths );
+	def( "pin", &pinWrapper, ( arg( "pinAncestors" ) = true ) );
+	def( "unpin", &unpinWrapper, ( arg( "unpinAncestors" ) = false ) );
+	def( "clearPinning", &clearPinningWrapper );
 }

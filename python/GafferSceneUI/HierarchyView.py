@@ -36,6 +36,7 @@
 ##########################################################################
 
 import functools
+import os
 
 import IECore
 
@@ -46,6 +47,33 @@ from . import _GafferSceneUI
 
 from . import ContextAlgo
 from . import SetUI
+
+class _PinColumn( GafferUI.PathColumn ) :
+
+	def __init__( self, title, hierarchyView ) :
+
+		GafferUI.PathColumn.__init__( self )
+
+		self.__title = title
+		self.__hierarchyView = hierarchyView
+
+	def cellData( self, path, canceller ) :
+
+		data = self.CellData()
+		match = self.__hierarchyView._pinnedPaths().match( path.property( "fullName" ) )
+		if match & IECore.PathMatcher.Result.ExactMatch : 
+			# data.value = "x"
+			data.toolTip = ( "Location pinned" )
+			data.icon = "nodeSetStandardSet.png"
+		elif match & IECore.PathMatcher.Result.DescendantMatch :
+			data.value = "c"
+			data.toolTip = ( "Child pinned" )
+
+		return data
+
+	def headerData( self, canceller ) :
+
+		return self.CellData( self.__title )
 
 ##########################################################################
 # HierarchyView
@@ -64,6 +92,7 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 		setFilter.setEnabled( False )
 
 		self.__filter = Gaffer.CompoundPathFilter( [ searchFilter, setFilter ] )
+		self.__pinnedPaths = IECore.PathMatcher()
 
 		with column :
 
@@ -74,7 +103,7 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 
 			self.__pathListing = GafferUI.PathListingWidget(
 				Gaffer.DictPath( {}, "/" ), # temp till we make a ScenePath
-				columns = [ GafferUI.PathListingWidget.defaultNameColumn ],
+				columns = [ GafferUI.PathListingWidget.defaultNameColumn, _PinColumn( "Pinned", self ) ],
 				selectionMode = GafferUI.PathListingWidget.SelectionMode.Rows,
 				displayMode = GafferUI.PathListingWidget.DisplayMode.Tree,
 			)
@@ -86,11 +115,13 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 
 			self.__pathListing.contextMenuSignal().connect( Gaffer.WeakMethod( self.__contextMenuSignal ), scoped = False )
 			self.__pathListing.keyPressSignal().connect( Gaffer.WeakMethod( self.__keyPressSignal ), scoped = False )
+			self.__pathListing.buttonDoubleClickSignal().connectFront( Gaffer.WeakMethod( self.__buttonDoubleClick ), scoped = False )
 
 		self.__plug = None
 		self._updateFromSet()
 		self.__transferExpansionFromContext()
 		self.__transferSelectionFromContext()
+		self.__transferPinningFromContext()
 
 	def scene( self ) :
 
@@ -126,6 +157,10 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 			self.__transferSelectionFromContext()
 		elif any( ContextAlgo.affectsExpandedPaths( x ) for x in modifiedItems ) :
 			self.__transferExpansionFromContext()
+		
+		if any( ContextAlgo.affectsPinnedPaths( x ) for x in modifiedItems ) :
+			self.__transferPinningFromContext()
+			self.__setPathListingPath()
 
 		for item in modifiedItems :
 			if not item.startswith( "ui:" ) :
@@ -133,6 +168,10 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 				# have too so we should update our PathListingWidget.
 				self.__setPathListingPath()
 				break
+
+	def _pinnedPaths( self ) :
+
+		return self.__pinnedPaths
 
 	def _titleFormat( self ) :
 
@@ -148,6 +187,23 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 		# the plug we were viewing has been deleted or moved - find
 		# another one to view.
 		self._updateFromSet()
+
+	def __buttonDoubleClick( self, pathListing, event ) :
+		
+		if event.button == event.Buttons.Left :
+
+			selection = pathListing.getSelection()
+			if selection.isEmpty() :
+				return False
+
+			if ContextAlgo.getPinnedPaths( self.getContext() ).match( selection.paths()[0] ) & IECore.PathMatcher.Result.ExactMatch :
+				ContextAlgo.unpin( self.getContext(), selection )
+				return True
+			else :
+				ContextAlgo.pin( self.getContext(), selection )
+				return True
+		
+		return False
 
 	@GafferUI.LazyMethod( deferUntilPlaybackStops = True )
 	def __setPathListingPath( self ) :
@@ -188,6 +244,12 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 		if event.key == "C" and event.modifiers == event.Modifiers.Control :
 			self.__copySelectedPaths()
 			return True
+		elif event.key == "P" and event.modifiers == event.Modifiers.Control :
+			self.__pinSelectedPaths()
+			return True
+		elif event.key == "U" and event.modifiers == event.Modifiers.Control :
+			self.__unpinSelectedPaths()
+			return True
 
 		return False
 
@@ -202,6 +264,52 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 				"command" : Gaffer.WeakMethod( self.__copySelectedPaths ),
 				"active" : not selection.isEmpty(),
 				"shortCut" : "Ctrl+C"
+			}
+		)
+
+		menuDefinition.append(
+			"Pin Path%s" % ( "" if selection.size() == 1 else "s" ),
+			{
+				"command" : Gaffer.WeakMethod( self.__pinSelectedPaths ),
+				"active" : not selection.isEmpty(),
+				"shortCut" : "Ctrl+P"
+			}
+		)
+
+		menuDefinition.append(
+			"Pin Expanded Children",
+			{
+				"command" : Gaffer.WeakMethod( self.__pinExpandedChildren ),
+			}
+		)
+
+		menuDefinition.append(
+			"Unpin Path%s" % ( "" if selection.size() == 1 else "s" ),
+			{
+				"command" : Gaffer.WeakMethod( self.__unpinSelectedPaths ),
+				"active" : not selection.isEmpty(),
+				"shortCut" : "Ctrl+U"
+			}
+		)
+
+		menuDefinition.append(
+			"Unpin Children",
+			{
+				"command" : Gaffer.WeakMethod( self.__unpinChildren ),
+			}
+		)
+
+		menuDefinition.append(
+			"Select Pinned Children",
+			{
+				"command" : Gaffer.WeakMethod( self.__selectPinnedChildren ),
+			}
+		)
+
+		menuDefinition.append(
+			"Collapse All",
+			{
+				"command" : Gaffer.WeakMethod( self.__collapseAllPaths ),
 			}
 		)
 
@@ -220,6 +328,67 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 			data = IECore.StringVectorData( selection.paths() )
 			self.__plug.ancestor( Gaffer.ApplicationRoot ).setClipboardContents( data )
 
+	def __pinSelectedPaths( self, *unused ) :
+
+		if self.__plug is None :
+			return
+
+		selection = self.__pathListing.getSelection()
+		if not selection.isEmpty() :
+			ContextAlgo.pin( self.getContext(), selection )
+	
+	def __unpinSelectedPaths( self, *unused ) :
+
+		if self.__plug is None :
+			return
+
+		selection = self.__pathListing.getSelection()
+		if not selection.isEmpty() :
+			ContextAlgo.unpin( self.getContext(), selection )
+
+	def __pinExpandedChildren( self, *unused ) :
+
+		if self.__plug is None :
+			return
+
+		selection = self.__pathListing.getSelection()
+		if not selection.isEmpty() :
+			expanded = ContextAlgo.getExpandedPaths( self.getContext() )
+			children = IECore.PathMatcher( [ e for e in expanded.paths() if selection.match( e ) & IECore.PathMatcher.Result.AncestorMatch ] )
+
+			ContextAlgo.pin( self.getContext(), children )
+
+	def __unpinChildren( self, *unused ) :
+
+		if self.__plug is None :
+			return
+
+		selection = self.__pathListing.getSelection()
+		if not selection.isEmpty() :
+			pinned = ContextAlgo.getPinnedPaths( self.getContext() )
+			children = IECore.PathMatcher( [ p for p in pinned.paths() if selection.match( p ) & IECore.PathMatcher.Result.AncestorMatch ] )
+
+			ContextAlgo.unpin( self.getContext(), children )
+
+	def __selectPinnedChildren( self, *unused ) :
+
+		if self.__plug is None :
+			return
+		
+		selection = self.__pathListing.getSelection()
+		if not selection.isEmpty() :
+			pinned = ContextAlgo.getPinnedPaths( self.getContext() )
+			children = IECore.PathMatcher( [ p for p in pinned.paths() if selection.match( p ) & IECore.PathMatcher.Result.AncestorMatch ] )
+			
+			self.__pathListing.setSelection( children )
+
+	def __collapseAllPaths( self, *unused ) :
+
+		if self.__plug is None :
+			return
+		
+		self.__pathListing.setExpansion( IECore.PathMatcher([]) )
+
 	@GafferUI.LazyMethod( deferUntilPlaybackStops = True )
 	def __transferExpansionFromContext( self ) :
 
@@ -236,6 +405,16 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 		selection = ContextAlgo.getSelectedPaths( self.getContext() )
 		with Gaffer.Signals.BlockedConnection( self.__selectionChangedConnection ) :
 			self.__pathListing.setSelection( selection, scrollToFirst=True, expandNonLeaf=False )
+
+	@GafferUI.LazyMethod( deferUntilPlaybackStops = True )
+	def __transferPinningFromContext( self ) :
+		
+		pinnedPaths = ContextAlgo.getPinnedPaths( self.getContext() )
+		if pinnedPaths is None :
+			return
+		
+		# with Gaffer.Signals.BlockedConnection( self.__expansionChangedConnection ) :
+		self.__pinnedPaths = pinnedPaths
 
 GafferUI.Editor.registerType( "HierarchyView", HierarchyView )
 
