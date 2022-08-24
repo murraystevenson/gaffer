@@ -60,14 +60,20 @@ class _PinColumn( GafferUI.PathColumn ) :
 	def cellData( self, path, canceller ) :
 
 		data = self.CellData()
-		match = self.__hierarchyView._pinnedPaths().match( path.property( "fullName" ) )
-		if match & IECore.PathMatcher.Result.ExactMatch : 
-			# data.value = "x"
-			data.toolTip = ( "Location pinned" )
-			data.icon = "nodeSetStandardSet.png"
-		elif match & IECore.PathMatcher.Result.DescendantMatch :
+		pinMatch = self.__hierarchyView._pinnedPaths().match( path.property( "fullName" ) )
+		expansion = ContextAlgo.getExpandedPaths( self.__hierarchyView.getContext() )
+		expansionMatch = expansion.match( path.property( "fullName" ) )
+
+		if pinMatch & IECore.PathMatcher.Result.ExactMatch : 
+			if expansionMatch & IECore.PathMatcher.Result.ExactMatch :
+				data.toolTip = "Location pinned"
+				data.icon = "nodeSetStandardSet.png"
+			else :
+				data.toolTip = "Location locked"
+				data.icon = "clearSearch.png"
+		elif pinMatch & IECore.PathMatcher.Result.DescendantMatch :
 			data.value = "c"
-			data.toolTip = ( "Child pinned" )
+			data.toolTip = "Child pinned"
 
 		return data
 
@@ -109,6 +115,8 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 			)
 			self.__pathListing.setDragPointer( "objects" )
 			self.__pathListing.setSortable( False )
+
+			self.__pinColumn = self.__pathListing.getColumns()[1]
 
 			self.__selectionChangedConnection = self.__pathListing.selectionChangedSignal().connect( Gaffer.WeakMethod( self.__selectionChanged ), scoped = False )
 			self.__expansionChangedConnection = self.__pathListing.expansionChangedSignal().connect( Gaffer.WeakMethod( self.__expansionChanged ), scoped = False )
@@ -191,16 +199,19 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 	def __buttonDoubleClick( self, pathListing, event ) :
 		
 		if event.button == event.Buttons.Left :
+			column = pathListing.columnAt( event.line.p0 )
+			if column != self.__pinColumn :
+				return False
 
 			selection = pathListing.getSelection()
 			if selection.isEmpty() :
 				return False
 
 			if ContextAlgo.getPinnedPaths( self.getContext() ).match( selection.paths()[0] ) & IECore.PathMatcher.Result.ExactMatch :
-				ContextAlgo.unpin( self.getContext(), selection )
+				self.__unpinSelectedPaths()
 				return True
 			else :
-				ContextAlgo.pin( self.getContext(), selection )
+				self.__pinSelectedPaths()
 				return True
 		
 		return False
@@ -345,6 +356,7 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 		selection = self.__pathListing.getSelection()
 		if not selection.isEmpty() :
 			ContextAlgo.unpin( self.getContext(), selection )
+			ContextAlgo.setExpandedPaths( self.getContext(), self.__pathListing.getExpansion() )
 
 	def __pinExpandedChildren( self, *unused ) :
 
@@ -369,6 +381,7 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 			children = IECore.PathMatcher( [ p for p in pinned.paths() if selection.match( p ) & IECore.PathMatcher.Result.AncestorMatch ] )
 
 			ContextAlgo.unpin( self.getContext(), children )
+			ContextAlgo.setExpandedPaths( self.getContext(), self.__pathListing.getExpansion() )
 
 	def __selectPinnedChildren( self, *unused ) :
 

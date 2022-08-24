@@ -101,25 +101,40 @@ namespace ContextAlgo
 
 void setExpandedPaths( Context *context, const IECore::PathMatcher &paths )
 {
-	context->set( g_expandedPathsName, new IECore::PathMatcherData( paths ) );
+	IECore::PathMatcher expandedPaths = context->get<PathMatcher>( g_expandedPathsName, IECore::PathMatcher() );
+	IECore::PathMatcher pinnedPaths = context->get<PathMatcher>( g_pinnedPathsName, IECore::PathMatcher() );
+
+	// Locked paths are those pinned before being expanded, we prevent these or their descendants from being expanded
+	IECore::PathMatcher lockedPaths = IECore::PathMatcher( pinnedPaths );
+	lockedPaths.removePaths( expandedPaths );
+
+	// Keep currently expanded pinned locations and their ancestors expanded
+	IECore::PathMatcher newExpansion = expandedPaths.intersection( pinnedPaths );
+	for( IECore::PathMatcher::RawIterator it = newExpansion.begin(), eIt = newExpansion.end(); it != eIt; ++it )
+	{
+		newExpansion.addPath( *it );
+	}
+
+	for( IECore::PathMatcher::Iterator it = paths.begin(), eIt = paths.end(); it != eIt; ++it )
+	{
+		// Limit new expansion to locations that aren't currently locked or a descendant of a locked location
+		if( !(lockedPaths.match( *it ) & (IECore::PathMatcher::Result::AncestorMatch | IECore::PathMatcher::Result::ExactMatch) ) )
+		{
+			newExpansion.addPath( *it );
+		}
+	}
+
+	context->set( g_expandedPathsName, new IECore::PathMatcherData( newExpansion ) );
 }
 
 IECore::PathMatcher getExpandedPaths( const Gaffer::Context *context )
 {
-	IECore::PathMatcher expandedPaths = context->get<PathMatcher>( g_expandedPathsName, IECore::PathMatcher() );
-	IECore::PathMatcher pinnedPaths = context->get<PathMatcher>( g_pinnedPathsName, IECore::PathMatcher() );
-
-	for( IECore::PathMatcher::RawIterator it = pinnedPaths.begin(), eIt = pinnedPaths.end(); it != eIt; ++it )
-	{
-		expandedPaths.addPath( *it );
-	}
-
-	return expandedPaths;
+	return context->get<PathMatcher>( g_expandedPathsName, IECore::PathMatcher() );
 }
 
 bool affectsExpandedPaths( const IECore::InternedString &name )
 {
-	return name == g_expandedPathsName || name == g_pinnedPathsName;
+	return name == g_expandedPathsName;
 }
 
 void expand( Context *context, const PathMatcher &paths, bool expandAncestors )
@@ -173,7 +188,8 @@ IECore::PathMatcher expandDescendants( Context *context, const IECore::PathMatch
 	if( needUpdate )
 	{
 		// If we modified the expanded paths, we need to set the value back on the context
-		context->set( g_expandedPathsName, expandedPaths );
+		// context->set( g_expandedPathsName, expandedPaths );
+		setExpandedPaths( context, expandedPaths );
 	}
 
 	return leafPaths;
