@@ -1737,6 +1737,7 @@ class PathModel : public QAbstractItemModel
 		{
 			cancelUpdate();
 			m_rootItem->dirty( /* dirtyChildItems = */ false, /* dirtyData = */ true );
+			headerDataChanged( Qt::Horizontal, 0, m_columns.size() - 1 );
 			scheduleUpdate();
 		}
 
