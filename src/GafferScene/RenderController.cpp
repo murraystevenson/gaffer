@@ -563,7 +563,7 @@ class RenderController::SceneGraph
 				{
 					// Create bounding box if needed
 					Box3f bound;
-					if( !m_expanded && m_children.size() )
+					if( ( !m_expanded && m_children.size() ) || m_excluded )
 					{
 						bound = controller->m_scene->boundPlug()->getValue();
 					}
