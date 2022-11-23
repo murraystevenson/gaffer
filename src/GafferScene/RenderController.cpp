@@ -318,7 +318,8 @@ class RenderController::SceneGraph
 			ObjectComponent = 8,
 			ChildNamesComponent = 16,
 			ExpansionComponent = 32,
-			AllComponents = BoundComponent | TransformComponent | AttributesComponent | ObjectComponent | ChildNamesComponent | ExpansionComponent,
+			VisibleSetComponent = 64,
+			AllComponents = BoundComponent | TransformComponent | AttributesComponent | ObjectComponent | ChildNamesComponent | ExpansionComponent | VisibleSetComponent,
 		};
 
 		// Constructs the root of the scene graph.
@@ -435,6 +436,30 @@ class RenderController::SceneGraph
 
 			clean( TransformComponent );
 
+			// VisibleSet
+
+			if( ( m_dirtyComponents & VisibleSetComponent ) && updateVisibleSet( path, controller->m_visibleSet, controller->m_minimumExpansionDepth ) )
+			{
+				m_changedComponents |= VisibleSetComponent;
+			}
+
+			if( m_changedComponents & VisibleSetComponent )
+			{
+				if( !m_visible )
+				{
+					clearObject();
+					clean( ObjectComponent );
+					m_changedComponents |= ObjectComponent;
+				}
+				else
+				{
+					// Dirty the object so it gets updated as it is now visible
+					m_dirtyComponents |= ObjectComponent;
+				}
+			}
+
+			clean( VisibleSetComponent );
+
 			// Object
 
 			if( ( m_dirtyComponents & ObjectComponent ) && updateObject( controller->m_scene->objectPlug(), type, controller->m_renderer.get(), controller->m_globals.get(), controller->m_scene.get(), controller->m_lightLinks.get(), controller->m_motionBlurOptions ) )
@@ -530,35 +555,48 @@ class RenderController::SceneGraph
 
 			bool newBound = false;
 			if(
-				( m_changedComponents & ( ExpansionComponent | ChildNamesComponent ) ) ||
+				( m_changedComponents & ( ExpansionComponent | ChildNamesComponent | VisibleSetComponent ) ) ||
 				( m_dirtyComponents & BoundComponent )
 			)
 			{
-				// Create bounding box if needed
-				Box3f bound;
-				if( !m_expanded && m_children.size() )
+				if( m_visible || m_excluded )
 				{
-					bound = controller->m_scene->boundPlug()->getValue();
-				}
-
-				if( !bound.isEmpty() )
-				{
-					IECoreScenePreview::PlaceholderPtr placeholder = new IECoreScenePreview::Placeholder( bound );
-
-					std::string boundName;
-					ScenePlug::pathToString( path, boundName );
-					boundName += "/__unexpandedChildren__";
-
-					if( controller->m_renderer->name() != g_openGLRendererName )
+					// Create bounding box if needed
+					Box3f bound;
+					if( !m_expanded && m_children.size() )
 					{
-						// See comments in `updateObject()`.
-						m_boundInterface = nullptr;
+						bound = controller->m_scene->boundPlug()->getValue();
 					}
 
-					m_boundInterface = controller->m_renderer->object( boundName, placeholder.get(), controller->m_defaultAttributes.get() );
-					if( m_boundInterface )
+					if( !bound.isEmpty() )
 					{
-						newBound = true;
+						IECoreScenePreview::PlaceholderPtr placeholder = new IECoreScenePreview::Placeholder( bound );
+
+						std::string boundName;
+						ScenePlug::pathToString( path, boundName );
+						boundName += "/__unexpandedChildren__";
+
+						if( controller->m_renderer->name() != g_openGLRendererName )
+						{
+							// See comments in `updateObject()`.
+							m_boundInterface = nullptr;
+						}
+
+						m_boundInterface = controller->m_renderer->object( boundName, placeholder.get(), controller->m_defaultAttributes.get() );
+						if( m_boundInterface )
+						{
+							if( m_excluded )
+							{
+								auto exclusionAttrs = new CompoundObject();
+								exclusionAttrs->members()["gl:primitive:wireframeColor"] = new Color4fData( Color4f( 0.32, 0.15, 0.15, 1 ) );
+								m_boundInterface->attributes( controller->m_renderer->attributes( exclusionAttrs ).get() );
+							}
+							newBound = true;
+						}
+					}
+					else
+					{
+						m_boundInterface = nullptr;
 					}
 				}
 				else
@@ -619,6 +657,8 @@ class RenderController::SceneGraph
 			m_attributesHash = m_lightLinksHash = m_transformHash = m_childNamesHash = IECore::MurmurHash();
 			m_cleared = true;
 			m_expanded = false;
+			m_visible = true;
+			m_excluded = false;
 			m_boundInterface = nullptr;
 			m_dirtyComponents = AllComponents;
 		}
@@ -967,6 +1007,20 @@ class RenderController::SceneGraph
 			return true;
 		}
 
+		bool updateVisibleSet( const ScenePlug::ScenePath &path, const GafferScene::VisibleSet &visibleSet, size_t minimumExpansionDepth )
+		{
+			const bool visible = visibleSet.match( path, minimumExpansionDepth ) & PathMatcher::ExactMatch;
+			const bool excluded = visibleSet.exclusions.match( path ) & PathMatcher::ExactMatch;
+
+			if( visible == m_visible && excluded == m_excluded )
+			{
+				return false;
+			}
+			m_visible = visible;
+			m_excluded = excluded;
+			return true;
+		}
+
 		// Ensures that children() contains a child for every name specified
 		// by childNamesPlug(). This just ensures that the children exist - they
 		// will subsequently be updated in parallel by the SceneGraphUpdateTask.
@@ -1103,6 +1157,8 @@ class RenderController::SceneGraph
 
 		IECoreScenePreview::Renderer::ObjectInterfacePtr m_boundInterface;
 		bool m_expanded;
+		bool m_excluded;
+		bool m_visible;
 
 		// Tracks work which needs to be done on
 		// the next call to `update()`.
@@ -1389,7 +1445,7 @@ void RenderController::setVisibleSet( const GafferScene::VisibleSet &visibleSet 
 	cancelBackgroundTask();
 
 	m_visibleSet = visibleSet;
-	dirtySceneGraphs( SceneGraph::ExpansionComponent );
+	dirtySceneGraphs( SceneGraph::ExpansionComponent | SceneGraph::VisibleSetComponent );
 	requestUpdate();
 }
 
