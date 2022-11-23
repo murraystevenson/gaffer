@@ -55,42 +55,43 @@ inline PathMatcher::Result VisibleSet::match( const std::vector<InternedString> 
 	if( minimumExpansionDepth >= path.size() )
 	{
 		// Paths within minimumExpansionDepth are considered visible and having visible children
-		/// \todo Return ExactMatch for child locations of paths equal to the minimumExpansionDepth,
-		/// and AncestorMatch for locations with ancestors within the minimumExpansionDepth. We should
+		/// \todo Return AncestorMatch for locations with ancestors within the minimumExpansionDepth. We should
 		/// also be able to return early and avoid testing inclusions and expansions for these paths.
 		result |= ( PathMatcher::ExactMatch | PathMatcher::DescendantMatch );
 	}
-
-	result |= inclusions.match( path );
-	if( result & PathMatcher::AncestorMatch )
+	else if( minimumExpansionDepth + 1 == path.size() )
 	{
-		// An ancestor in inclusions will cause this path to be visible so ensure that ExactMatch is also set
 		result |= PathMatcher::ExactMatch;
 	}
 
-	/// \todo For compatibility with existing RenderController behaviour we are returning an ExactMatch
-	/// only for locations that are expanded, rather than locations that are _visible_ as a result of expansion,
-	/// as that would currently result in an unnecessary additional level of expansion. This will be addressed as
-	/// part of future RenderController changes allowing for independent visibility of sibling locations.
-	const unsigned expansionsMatch = expansions.match( path );
-	if( expansionsMatch & PathMatcher::ExactMatch )
+	const unsigned inclusionsMatch = inclusions.match( path );
+	result |= inclusionsMatch;
+	if( inclusionsMatch & ( PathMatcher::ExactMatch | PathMatcher::AncestorMatch ) )
 	{
-		if( path.size() > 1 )
+		// An ancestor in inclusions will cause this path and its descendants to be visible
+		result |= ( PathMatcher::ExactMatch | PathMatcher::DescendantMatch );
+	}
+
+	const unsigned expansionsMatch = expansions.match( path );
+	if( path.size() > 1 )
+	{
+		std::vector<InternedString> parentPath = path; parentPath.pop_back();
+		// Expansions also require an expanded parent to be visible
+		/// \todo This would be improved by testing all ancestors rather than only the immediate parent.
+		/// We'll need to consider how to handle `/` as the root location is implicitly expanded and would
+		/// need to be present in expansions for a successful AllAncestorsMatch.
+		if( expansions.match( parentPath ) & PathMatcher::ExactMatch )
 		{
-			std::vector<InternedString> parentPath = path; parentPath.pop_back();
-			// Expansions also require an expanded parent to be visible
-			/// \todo This would be improved by testing all ancestors rather than only the immediate parent.
-			/// We'll need to consider how to handle `/` as the root location is implicitly expanded and would
-			/// need to be present in expansions for a successful AllAncestorsMatch.
-			if( expansions.match( parentPath ) & PathMatcher::ExactMatch )
+			result |= ( PathMatcher::ExactMatch | PathMatcher::AncestorMatch );
+			if( expansionsMatch & PathMatcher::ExactMatch )
 			{
-				result |= expansionsMatch;
+				result |= PathMatcher::DescendantMatch;
 			}
 		}
-		else
-		{
-			result |= expansionsMatch;
-		}
+	}
+	else if( path.size() == 1 && expansionsMatch & PathMatcher::ExactMatch )
+	{
+		result |= PathMatcher::DescendantMatch;
 	}
 
 	return (PathMatcher::Result)result;
