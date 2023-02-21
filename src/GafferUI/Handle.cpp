@@ -472,6 +472,7 @@ void Handle::PlanarDrag::init( const Gadget *gadget, const Imath::V3f &origin, c
 
 	m_preciseMotionEnabled = dragBeginEvent.modifiers & ModifiableEvent::Shift;
 	m_preciseMotionOrigin = m_dragBeginPosition;
+
 }
 
 
