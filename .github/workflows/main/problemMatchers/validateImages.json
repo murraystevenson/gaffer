@@ -1,0 +1,13 @@
+{
+	"problemMatcher": [
+		{
+			"owner": "validateImages",
+			"pattern": [
+				{
+					"regexp": "^((ERROR|WARNING).+)$",
+					"message": 1
+				}
+			]
+		}
+	]
+}

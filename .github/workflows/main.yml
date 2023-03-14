@@ -260,3 +260,62 @@ jobs:
       if: failure()
       shell: bash
 
+  imageCheck:
+
+    needs: build
+
+    strategy:
+
+      fail-fast: false
+
+      matrix:
+
+          name: [
+            linux,
+            windows,
+          ]
+
+          include:
+
+          - name: linux
+            os: ubuntu-20.04
+            extension: tar.gz
+          - name: windows
+            os: windows-2019
+            extension: zip
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+
+    - uses: actions/checkout@v3
+
+    - name: 'Install Python Modules'
+      run: |
+        python --version
+        pip install PyGitHub==1.45
+
+    - name: Download Build Artifacts
+      # We download all artifacts and then glob match for the specific file
+      # in the validation step as we don't have easy access to the name of
+      # the artifact produced by each iteration of the build matrix.
+      # https://github.com/actions/runner/pull/2477 goes some way to improve
+      # this by allowing outputs to be created for each matrix job, but it
+      # requires additional updates from GitHub before we can make use of it.
+      uses: actions/download-artifact@v3
+
+    - name: Validate Images
+      id: validateImages
+      run: |
+        echo "::add-matcher::./.github/workflows/main/problemMatchers/validateImages.json"
+        python ./config/validateImages.py --check ./gaffer-*-${{ matrix.name }}/gaffer-*-${{ matrix.name }}.${{ matrix.extension }} --ci --report ./checks/imageCheck/imageCheck-${{ matrix.name }}
+        echo "::remove-matcher owner=validateImages::"
+
+    - name: Upload Image Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: imageCheck
+        path: ./checks/imageCheck
+      # We want the previous step to be able to fail while still allowing
+      # this step to run to upload the report.
+      if: steps.validateImages.outputs.report && ( success() || failure() )
