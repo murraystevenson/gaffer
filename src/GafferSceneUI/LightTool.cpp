@@ -84,9 +84,12 @@ using namespace GafferSceneUI::Private;
 namespace
 {
 
-// Color from `StandardLightVisualiser`
-const Color3f g_lightToolHandleColor = Color3f( 1.0f, 0.835f, 0.07f );
+const Color3f g_lightToolHandleColor = Color3f( 0.825, 0.720f, 0.230f );
 const Color4f g_lightToolHandleColor4 = Color4f( g_lightToolHandleColor.x, g_lightToolHandleColor.y, g_lightToolHandleColor.z, 1.f );
+
+// Color from `StandardLightVisualiser`
+const Color3f g_lightToolHighlightColor = Color3f( 1.0f, 0.835f, 0.07f );
+const Color4f g_lightToolHighlightColor4 = Color4f( g_lightToolHighlightColor.x, g_lightToolHighlightColor.y, g_lightToolHighlightColor.z, 1.f );
 
 // Multiplied by the highlight color for drawing a parameter's previous value
 const float g_highlightMultiplier = 0.8f;
@@ -96,11 +99,11 @@ const InternedString g_frustumScaleAttributeName( "gl:light:frustumScale" );
 const InternedString g_insetPenumbraType( "inset" );
 const InternedString g_outsetPenumbraType( "outset" );
 const InternedString g_absolutePenumbraType( "absolute" );
-const float g_penumbraHandleZAxisRotation = -20.f;
-const float g_spotLightHandleCubeScale = 0.04f;
+const float g_penumbraHandleZAxisRotation = 0.f;
+const float g_spotLightHandleCubeScale = 0.5f;
 const float g_minimumVisiblePenumbraAngle = 1.f;
-const float g_coneSpokeLineWidth = 4.f;
-const float g_penumbraSpokeLineWidth = 2.f;
+const float g_coneSpokeLineWidth = 2.f;
+const float g_penumbraSpokeLineWidth = 1.f;
 
 // Return the plug that holds the value we need to edit, and make sure it's enabled.
 
@@ -701,7 +704,7 @@ class SpotLightHandle : public LightToolHandle
 			IECoreGL::GroupPtr nearIconGroup = new IECoreGL::Group;
 			nearIconGroup->addChild( cube() );
 			nearIconGroup->setTransform(
-				M44f().scale( V3f( g_spotLightHandleCubeScale ) ) * (
+				M44f().scale( V3f( g_spotLightHandleCubeScale * .5f / rasterScale.x ) ) * (
 					M44f().translate( V3f( 0, 0, -m_visualiserScale ) / rasterScale )
 				)
 			);
@@ -709,7 +712,7 @@ class SpotLightHandle : public LightToolHandle
 			IECoreGL::GroupPtr farIconGroup = new IECoreGL::Group;
 			farIconGroup->addChild( cube() );
 			farIconGroup->setTransform(
-				M44f().scale( V3f( g_spotLightHandleCubeScale ) ) * (
+				M44f().scale( V3f( g_spotLightHandleCubeScale / rasterScale.x ) ) * (
 					M44f().translate( V3f( 0, 0, m_frustumScale * m_visualiserScale * -10.f ) / rasterScale )
 				)
 			);
@@ -723,14 +726,21 @@ class SpotLightHandle : public LightToolHandle
 			assert( standardStyle );
 			Color3f highlightColor3 = standardStyle->getColor( StandardStyle::Color::HighlightColor );
 			Color4f highlightColor4 = Color4f( highlightColor3.x, highlightColor3.y, highlightColor3.z, 1.f );
+			const bool highlighted = state == Style::State::HighlightedState || m_drag;
 
-			group->getState()->add(
+			iconGroup->getState()->add(
 				new IECoreGL::Color(
-					state == Style::State::HighlightedState ? g_lightToolHandleColor4 : highlightColor4
+					highlighted ? g_lightToolHighlightColor4 : g_lightToolHandleColor4
 				)
 			);
 
-			if( state == Style::State::HighlightedState && m_drag )
+			wireGroup->getState()->add(
+				new IECoreGL::Color(
+					highlighted ? g_lightToolHighlightColor4 : highlightColor4
+				)
+			);
+
+			if( m_drag )
 			{
 				const auto &[coneAngle, penumbraAngle] = spotLightAngleValues();
 				float angle = angleToArcAngle( m_handleType == HandleType::Cone ? coneAngle : penumbraAngle.value() );
