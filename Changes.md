@@ -14,6 +14,7 @@ Improvements
   - Added visualisation of light filters for USD lights.
   - Added support for USD lights and shaders in the floating inspector panel.
 - ShaderTweaks/ShaderQuery : Added presets for USD light and surface shaders.
+- HierarchyView : Added ability to store the current Visible Set as a named bookmark saved with the script.
 
 Fixes
 -----

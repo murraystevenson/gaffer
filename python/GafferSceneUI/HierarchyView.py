@@ -36,6 +36,7 @@
 ##########################################################################
 
 import functools
+import imath
 
 import IECore
 
@@ -69,6 +70,8 @@ class HierarchyView( GafferUI.NodeSetEditor ) :
 
 			with GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Horizontal, spacing = 4 ) :
 
+				_VisibleSetBookmarkWidget()
+				GafferUI.Spacer( imath.V2i( 0 ) )
 				_SearchFilterWidget( searchFilter )
 				_SetFilterWidget( setFilter )
 
@@ -377,3 +380,97 @@ class _SearchFilterWidget( GafferUI.PathFilterWidget ) :
 	def __patternEditingFinished( self, widget ) :
 
 		self.pathFilter().setMatchPattern( self.__patternWidget.getText() )
+
+##########################################################################
+# _VisibleSetBookmarkWidget
+##########################################################################
+
+class _VisibleSetBookmarkWidget( GafferUI.Widget ) :
+
+	def __init__( self ) :
+
+		button = GafferUI.MenuButton(
+			image = "locationIncludedTransparent.png",
+			hasFrame = False,
+			menu = GafferUI.Menu(
+				Gaffer.WeakMethod( self.__bookmarkMenuDefinition ),
+				title = "Bookmarks"
+			)
+		)
+
+		self.__metadataPrefix = "visibleSet:bookmark:"
+
+		GafferUI.Widget.__init__( self, button )
+
+	def __bookmarkMenuDefinition( self ) :
+
+		scriptWindow = self.ancestor( GafferUI.ScriptWindow )
+
+		m = IECore.MenuDefinition()
+		bookmarks = sorted( [ x.replace( self.__metadataPrefix, "" ) for x in Gaffer.Metadata.registeredValues( scriptWindow.scriptNode()["variables"] ) if x.startswith( self.__metadataPrefix ) ] )
+
+		if bookmarks :
+			for b in bookmarks :
+				m.append( "/" + b, { "command" : functools.partial( self.restore, b ), "name" : b } )
+
+			m.append( "/BookmarkDivider", { "divider" : True } )
+
+			for b in bookmarks :
+				m.append( "/Save As/" + b, { "command" : functools.partial( self.saveAs, b ), "name" : b } )
+				m.append( "/Delete/" + b, { "command" : functools.partial( self.delete, b ), "name" : b } )
+
+			m.append( "/Save As/Divider", { "divider" : True } )
+
+		m.append( "/Save As/New Bookmark...", { "command" : self.save } )
+
+		return m
+
+	def save( self ) :
+
+		scriptWindow = self.ancestor( GafferUI.ScriptWindow )
+
+		d = GafferUI.TextInputDialogue( initialText = "", title = "Save Bookmark", confirmLabel = "Save" )
+		name = d.waitForText( parentWindow = scriptWindow )
+		d.setVisible( False )
+
+		if not name :
+			return
+
+		self.saveAs( name )
+
+	def saveAs( self, name ) :
+
+		scriptWindow = self.ancestor( GafferUI.ScriptWindow )
+		scriptNode = scriptWindow.scriptNode()
+
+		visibleSet = ContextAlgo.getVisibleSet( scriptNode.context() )
+
+		s = IECore.MemoryIndexedIO( IECore.CharVectorData(), IECore.IndexedIO.OpenMode.Write )
+		IECore.PathMatcherData( visibleSet.inclusions ).save( s, "inclusions" )
+		IECore.PathMatcherData( visibleSet.exclusions ).save( s, "exclusions" )
+		IECore.PathMatcherData( visibleSet.expansions ).save( s, "expansions" )
+
+		Gaffer.Metadata.registerValue( scriptNode["variables"], self.__metadataPrefix + name, IECore.decToHexCharVector( s.buffer() ) )
+
+	def delete( self, name ) :
+
+		scriptWindow = self.ancestor( GafferUI.ScriptWindow )
+		scriptNode = scriptWindow.scriptNode()
+
+		Gaffer.Metadata.deregisterValue( scriptNode["variables"], self.__metadataPrefix + name )
+
+	def restore( self, name ) :
+
+		scriptWindow = self.ancestor( GafferUI.ScriptWindow )
+		scriptNode = scriptWindow.scriptNode()
+
+		bookmark = Gaffer.Metadata.value( scriptNode["variables"], self.__metadataPrefix + name )
+		if bookmark :
+			s = IECore.MemoryIndexedIO( IECore.hexToDecCharVector( bookmark ), IECore.IndexedIO.OpenMode.Read )
+
+			visibleSet = GafferScene.VisibleSet()
+			visibleSet.inclusions = IECore.Object.load( s, "inclusions" ).value
+			visibleSet.exclusions = IECore.Object.load( s, "exclusions" ).value
+			visibleSet.expansions = IECore.Object.load( s, "expansions" ).value
+
+			ContextAlgo.setVisibleSet( scriptNode.context(), visibleSet )
