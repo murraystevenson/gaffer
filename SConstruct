@@ -755,6 +755,9 @@ if commandEnv["PLATFORM"]=="darwin" :
 		[ "/System/Library/Frameworks/ImageIO.framework/Resources", "$BUILD_DIR/lib" ] +
 		split( commandEnv["LOCATE_DEPENDENCY_LIBPATH"] )
 	) )
+	commandEnv["ENV"]["DYLD_FRAMEWORK_PATH"] = commandEnv.subst( ":".join(
+		[ "$BUILD_DIR/lib" ] + split( commandEnv["LOCATE_DEPENDENCY_LIBPATH"] )
+	) )
 elif commandEnv["PLATFORM"] == "win32" :
 	commandEnv["ENV"]["PATH"] = commandEnv.subst( ";".join( [ "$BUILD_DIR/lib" ] + split( commandEnv[ "LOCATE_DEPENDENCY_LIBPATH" ] ) + [ commandEnv["ENV"]["PATH"] ] ) )
 else:
