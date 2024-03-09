@@ -85,7 +85,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 archiveURL = args.archiveURL.format(
-	platform = { "darwin" : "osx", "win32" : "windows" }.get( sys.platform, "linux" ),
+	platform = { "darwin" : "macos", "win32" : "windows" }.get( sys.platform, "linux" ),
 	buildEnvironment = "-{}".format( args.buildEnvironment ) if args.buildEnvironment else "",
 	extension = "tar.gz" if sys.platform != "win32" else "zip"
 )
