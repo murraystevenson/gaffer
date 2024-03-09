@@ -32,6 +32,11 @@ Breaking Changes
 - IECoreArnold : Added `messageContext` argument to `NodeAlgo::Converter` and `NodeAlgo::MotionConverter`.
 - Instancer : Renamed `encapsulateInstanceGroups` plug to `encapsulate`. Encapsulation now produces a single capsule at the `.../instances` location, instead of capsules at each `.../instances/<prototypeName>` location.
 
+Build
+-----
+
+- 3Delight : Updated to 3Delight version 2.9.75.
+
 [^1]: To be omitted from 1.5.0.0 release notes.
 
 1.5.0.0a1 (relative to 1.4.13.0)
