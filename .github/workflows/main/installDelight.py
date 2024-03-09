@@ -43,8 +43,8 @@ if sys.version_info[0] < 3 :
 else :
     from urllib.request import urlretrieve
 
-delightVersion="2.9.39"
-delightDirectory="free/beta/2023-05-26-gbhdz8Oe"
+delightVersion="2.9.75"
+delightDirectory="free/beta/2024-03-06-TTgkLcEn"
 
 baseUrl = "https://3delight-downloads.s3-us-east-2.amazonaws.com"
 
