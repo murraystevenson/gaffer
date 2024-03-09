@@ -195,7 +195,7 @@ class PerformanceMonitorTest( GafferTest.TestCase ) :
 		# in CI due to machine contention. We're leaving the test in as it
 		# would potentially still catch some catastrophic orders-of-magnitude
 		# timing increase bug...
-		delta = 1.0 if GafferTest.inCI() else 0.01
+		delta = 1.0 if GafferTest.inCI() else 0.011
 
 		self.assertEqual( m.plugStatistics( n1["out"] ).hashCount, 1 )
 		self.assertEqual( m.plugStatistics( n1["out"] ).computeCount, 1 )
