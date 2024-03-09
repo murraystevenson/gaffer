@@ -31,6 +31,7 @@ jobs:
           linux-gcc11,
           linux-debug-gcc11,
           windows,
+          macos-arm64,
         ]
 
         include:
@@ -69,6 +70,16 @@ jobs:
             testArguments: -excludedCategories performance GafferTest GafferVDBTest GafferUSDTest GafferSceneTest GafferDispatchTest GafferOSLTest GafferImageTest GafferUITest GafferImageUITest GafferSceneUITest GafferDispatchUITest GafferOSLUITest GafferUSDUITest GafferVDBUITest GafferDelightUITest GafferTractorTest GafferTractorUITest
             sconsCacheMegabytes: 800
             jobs: 4
+
+          - name: macos-arm64
+            os: macos-14
+            buildType: RELEASE
+            publish: false
+            containerImage:
+            testRunner: bash -c
+            testArguments: -excludedCategories performance
+            sconsCacheMegabytes: 400
+            jobs: 3
 
     runs-on: ${{ matrix.os }}
 
@@ -116,6 +127,20 @@ jobs:
         echo DISPLAY=:99.0 >> $GITHUB_ENV
       shell: bash
       if: runner.os == 'Linux'
+
+    - name: Install toolchain (macOS)
+      run: |
+        # Choose the earliest Xcode version available on a macos-14 runner.
+        sudo xcode-select -s /Applications/Xcode_14.3.1.app/Contents/Developer
+        sudo pip3 install scons==4.6.0 --break-system-packages
+        # Install docs dependencies matching the versions specified in the
+        # linux build container.
+        sudo pip3 install sphinx==4.3.1 sphinx_rtd_theme==1.0.0 myst-parser==0.15.2 docutils==0.17.1 sphinxcontrib-applehelp==1.0.4 sphinxcontrib-devhelp==1.0.2 sphinxcontrib-htmlhelp==2.0.1 sphinxcontrib-jsmath==1.0.1 sphinxcontrib-serializinghtml==1.1.5 sphinxcontrib-qthelp==1.0.3 --break-system-packages
+        # Install Inkscape.
+        brew install --cask inkscape
+        # Remove CommandLineTools so there is no potential for conflict with Xcode
+        sudo rm -rf /Library/Developer/CommandLineTools
+      if: runner.os == 'macOS'
 
     - name: 'Install Python Modules'
       run: |
