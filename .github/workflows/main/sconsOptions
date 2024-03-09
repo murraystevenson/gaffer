@@ -62,3 +62,5 @@ if sys.platform == "win32" :
 	GLEW_LIB_SUFFIX = "32"
 	INKSCAPE = "C:\\Program Files\\Inkscape\\bin\\inkscape.exe"
 	SPHINX = "noSphinxYet"
+elif sys.platform == "darwin" :
+	ARNOLD_ROOT = ""
