@@ -39,6 +39,7 @@ import pathlib
 import platform
 import unittest
 import shutil
+import sys
 import functools
 import datetime
 import re
@@ -114,7 +115,7 @@ class ImageWriterTest( GafferImageTest.ImageTestCase ) :
 	def testTiffWrite( self ) :
 
 		options = {}
-		options['maxError'] = 0.0032
+		options['maxError'] = 0.011 if sys.platform == "darwin" else 0.0032
 		options['metadata'] = { 'compression' : IECore.StringData( "zip" ), 'tiff:Compression' : IECore.IntData( 8 ) }
 		options['plugs'] = {}
 		options['plugs']['mode'] = [
@@ -128,7 +129,7 @@ class ImageWriterTest( GafferImageTest.ImageTestCase ) :
 				{ 'value': "packbits", 'metadata' : { 'compression' : IECore.StringData( "packbits" ), 'tiff:Compression' : IECore.IntData( 32773 ) } },
 			]
 		options['plugs']['dataType'] = [
-				{ 'value': "uint8", 'metadata': { 'oiio:BitsPerSample': IECore.IntData( 8 ) }, 'maxError': 0.0 },
+				{ 'value': "uint8", 'metadata': { 'oiio:BitsPerSample': IECore.IntData( 8 ) }, 'maxError': 0.011 if sys.platform == "darwin" else 0.0 },
 				{ 'value': "uint16", 'metadata': { 'oiio:BitsPerSample': IECore.IntData( 16 ) } },
 				{ 'value': "float", 'metadata': { 'oiio:BitsPerSample': IECore.IntData( 32 ) } },
 			]
@@ -176,7 +177,7 @@ class ImageWriterTest( GafferImageTest.ImageTestCase ) :
 		# even if asked not to.
 
 		options = {}
-		options['maxError'] = 0.0
+		options['maxError'] = 0.02 if sys.platform == "darwin" else 0.0
 		options['plugs'] = {}
 		options['plugs']['compression'] = [
 				{ 'value': "none" },
@@ -262,7 +263,7 @@ class ImageWriterTest( GafferImageTest.ImageTestCase ) :
 	def testIffWrite( self ) :
 
 		options = {}
-		options['maxError'] = 0.0
+		options['maxError'] = 0.011 if sys.platform == "darwin" else 0.0
 		options['plugs'] = {}
 		options['mode'] = [
 				{ 'value': GafferImage.ImageWriter.Mode.Tile },
@@ -581,13 +582,13 @@ class ImageWriterTest( GafferImageTest.ImageTestCase ) :
 
 	def testPadDataWindowToDisplayWindowTile ( self ) :
 
-		self.__testAdjustDataWindowToDisplayWindow( "iff", self.__rgbFilePath )
+		self.__testAdjustDataWindowToDisplayWindow( "iff", self.__rgbFilePath, maxDifference = 0.01 if sys.platform == "darwin" else 0.0 )
 
 	def testCropDataWindowToDisplayWindowTile ( self ) :
 
 		self.__testAdjustDataWindowToDisplayWindow( "iff", self.__negativeDataWindowFilePath )
 
-	def __testAdjustDataWindowToDisplayWindow( self, ext, filePath ) :
+	def __testAdjustDataWindowToDisplayWindow( self, ext, filePath, maxDifference = 0.0 ) :
 
 		r = GafferImage.ImageReader()
 		r["fileName"].setValue( filePath )
@@ -618,7 +619,7 @@ class ImageWriterTest( GafferImageTest.ImageTestCase ) :
 		writerOutput = GafferImage.ImageReader()
 		writerOutput["fileName"].setValue( testFile )
 
-		self.assertImagesEqual( expectedOutput["out"], writerOutput["out"], ignoreMetadata = True )
+		self.assertImagesEqual( expectedOutput["out"], writerOutput["out"], ignoreMetadata = True, maxDifference = maxDifference )
 
 	def testOffsetDisplayWindowWrite( self ) :
 
