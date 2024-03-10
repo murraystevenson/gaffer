@@ -36,6 +36,7 @@
 
 import os
 import pathlib
+import sys
 import unittest
 import imath
 
@@ -49,6 +50,7 @@ import GafferScene
 import GafferSceneTest
 
 @unittest.skipIf( GafferTest.inCI(), "OpenGL not set up" )
+@unittest.skipIf( sys.platform == "darwin", "OpenGL deprecated on macOS" )
 class OpenGLRenderTest( GafferSceneTest.RenderTest ) :
 
 	renderer = "OpenGL"
