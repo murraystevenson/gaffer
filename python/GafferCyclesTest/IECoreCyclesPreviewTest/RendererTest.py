@@ -35,6 +35,7 @@
 ##########################################################################
 
 import math
+import sys
 import time
 import unittest
 
@@ -2377,6 +2378,7 @@ class RendererTest( GafferTest.TestCase ) :
 				renderer.option( "cycles:session:threads", IECore.IntData( threads ) )
 				self.assertEqual( renderer.command( "cycles:querySession", {} )["threads"].value, expectedThreads )
 
+	@unittest.skipIf( GafferTest.inCI() and sys.platform == "darwin", "No metal device available on CI" )
 	def testDevices( self ) :
 
 		typeIndices = {}
