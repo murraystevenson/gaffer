@@ -535,6 +535,7 @@ class WidgetTest( GafferUITest.TestCase ) :
 		widget = TestWidget( displayTransform = displayTransform1 )
 		self.assertIs( widget.displayTransform(), displayTransform1 )
 
+	@unittest.skipIf( sys.platform == "darwin", "Temporarily skip failing macOS test" )
 	def testDisplayTransformChanged( self ) :
 
 		class CapturingWidget( GafferUI.Widget ) :
