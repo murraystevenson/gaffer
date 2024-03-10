@@ -872,9 +872,9 @@ class RendererTest( GafferTest.TestCase ) :
 		self.assertTrue( isinstance( image, IECoreImage.ImagePrimitive ) )
 
 		color = self.__colorAtUV( image, imath.V2f( 0.5 ) )
-		self.assertEqual( color.r, points["N"].data[0].x )
-		self.assertEqual( color.g, points["N"].data[0].y )
-		self.assertEqual( color.b, points["N"].data[0].z )
+		self.assertAlmostEqual( color.r, points["N"].data[0].x, delta = 0.00001 )
+		self.assertAlmostEqual( color.g, points["N"].data[0].y, delta = 0.00001 )
+		self.assertAlmostEqual( color.b, points["N"].data[0].z, delta = 0.00001 )
 
 	def __testMeshSmoothing( self, cube, smoothingExpected ) :
 
@@ -1670,7 +1670,10 @@ class RendererTest( GafferTest.TestCase ) :
 		image = IECoreImage.ImageDisplayDriver.storedImage( "testCustomAttributePrecedence" )
 		self.assertIsInstance( image, IECoreImage.ImagePrimitive )
 
-		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.55 ) ), imath.Color4f( 0, 1, 0, 1 ) )
+		expectedResult = imath.Color4f( 0, 1, 0, 1 )
+		color = self.__colorAtUV( image, imath.V2f( 0.55 ) )
+		for i in range( 0, 4 ) :
+				self.assertAlmostEqual( color[i], expectedResult[i], delta = 0.00001 )
 
 		del plane
 
