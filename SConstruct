@@ -445,6 +445,11 @@ if env["PLATFORM"] != "win32" :
 	if env["PLATFORM"] == "darwin" :
 
 		env.Append( CXXFLAGS = [ "-D__USE_ISOC99" ] )
+
+		# Disable FMA on macOS otherwise we get floating point
+		# discrepancies with other platforms and test failures.
+		env.Append( CXXFLAGS = [ "-ffp-contract=off" ] )
+
 		env["GAFFER_PLATFORM"] = "macos"
 
 	else :
