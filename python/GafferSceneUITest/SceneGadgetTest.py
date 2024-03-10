@@ -36,6 +36,7 @@
 
 import math
 import os
+import sys
 import time
 import unittest
 import random
@@ -452,6 +453,7 @@ class SceneGadgetTest( GafferUITest.TestCase ) :
 		os.environ.get( "GAFFER_BUILD_ENVIRONMENT", "" ) == "gcc9",
 		"The gcc9 container does not support floating point depth buffers."
 	)
+	@unittest.skipIf( sys.platform == "darwin", "Depth buffer issues on macOS" )
 	def testObjectAtLine( self ) :
 
 		script = Gaffer.ScriptNode()
@@ -709,6 +711,7 @@ class SceneGadgetTest( GafferUITest.TestCase ) :
 		os.environ.get( "GAFFER_BUILD_ENVIRONMENT", "" ) == "gcc9",
 		"The gcc9 container does not support floating point depth buffers."
 	)
+	@unittest.skipIf( sys.platform == "darwin", "Depth buffer issues on macOS" )
 	def testNormalAt( self ) :
 
 		s = Gaffer.ScriptNode()
