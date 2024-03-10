@@ -1821,6 +1821,8 @@ class GraphGadgetTest( GafferUITest.TestCase ) :
 		# follow suit.
 
 		script["switch"]["index"].setValue( 1 )
+		self.waitForIdle( 1000 )
+
 		self.assertHighlighting( graphGadget, { "switch" : True, "add1" : False, "add2" : True } )
 
 	def testFocusEmptyContextVariables( self ) :
