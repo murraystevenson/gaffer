@@ -158,7 +158,7 @@ class LightEditor( GafferUI.NodeSetEditor ) :
 		GafferSceneUI.LightEditor.registerColumn(
 			rendererKey,
 			parameter,
-			lambda scene, editScope : _GafferSceneUI._LightEditorInspectorColumn(
+			lambda scene, editScope : GafferSceneUI.Private.InspectorColumn(
 				GafferSceneUI.Private.ParameterInspector( scene, editScope, rendererKey, parameter ),
 				columnName if columnName is not None else ""
 			),
@@ -168,11 +168,11 @@ class LightEditor( GafferUI.NodeSetEditor ) :
 	@classmethod
 	def registerAttribute( cls, rendererKey, attributeName, section = None ) :
 
-		displayName = attributeName.split( ':' )[-1]
+		displayName = IECore.CamelCase.toSpaced( attributeName.split( ':' )[-1] )
 		GafferSceneUI.LightEditor.registerColumn(
 			rendererKey,
 			attributeName,
-			lambda scene, editScope : _GafferSceneUI._LightEditorInspectorColumn(
+			lambda scene, editScope : GafferSceneUI.Private.InspectorColumn(
 				GafferSceneUI.Private.AttributeInspector( scene, editScope, attributeName ),
 				displayName
 			),
@@ -182,7 +182,7 @@ class LightEditor( GafferUI.NodeSetEditor ) :
 	# Registers a column in the Light Editor.
 	# `inspectorFunction` is a callable object of the form
 	# `inspectorFunction( scene, editScope )` returning a
-	# `GafferSceneUI._LightEditorInspectorColumn` object.
+	# `GafferSceneUI.Private.InspectorColumn` object.
 	@classmethod
 	def registerColumn( cls, rendererKey, columnKey, inspectorFunction, section = None ) :
 
@@ -341,7 +341,7 @@ class LightEditor( GafferUI.NodeSetEditor ) :
 
 		with Gaffer.Context( self.getContext() ) as context :
 			for selection, column in zip( pathListing.getSelection(), pathListing.getColumns() ) :
-				if not isinstance( column, _GafferSceneUI._LightEditorInspectorColumn ) :
+				if not isinstance( column, GafferSceneUI.Private.InspectorColumn ) :
 					continue
 				for pathString in selection.paths() :
 					path = GafferScene.ScenePlug.stringToPath( pathString )
@@ -464,7 +464,7 @@ class LightEditor( GafferUI.NodeSetEditor ) :
 
 		with Gaffer.Context( self.getContext() ) as context :
 			for columnSelection, column in zip( pathListing.getSelection(), pathListing.getColumns() ) :
-				if not isinstance( column, _GafferSceneUI._LightEditorInspectorColumn ) :
+				if not isinstance( column, GafferSceneUI.Private.InspectorColumn ) :
 					continue
 				for path in columnSelection.paths() :
 					context["scene:path"] = GafferScene.ScenePlug.stringToPath( path )
@@ -513,7 +513,7 @@ class LightEditor( GafferUI.NodeSetEditor ) :
 
 		with Gaffer.Context( self.getContext() ) as context :
 			for columnSelection, column in zip( pathListing.getSelection(), pathListing.getColumns() ) :
-				if not isinstance( column, _GafferSceneUI._LightEditorInspectorColumn ) :
+				if not isinstance( column, GafferSceneUI.Private.InspectorColumn ) :
 					continue
 				elif not columnSelection.isEmpty() and type( column.inspector() ) != GafferSceneUI.Private.AttributeInspector :
 					return []
@@ -695,7 +695,7 @@ class LightEditor( GafferUI.NodeSetEditor ) :
 
 		for i in range( 0, len( columns ) ) :
 			column = columns[ i ]
-			if not isinstance( column, _GafferSceneUI._LightEditorInspectorColumn ) :
+			if not isinstance( column, GafferSceneUI.Private.InspectorColumn ) :
 				continue
 
 			for path in selection[i].paths() :
