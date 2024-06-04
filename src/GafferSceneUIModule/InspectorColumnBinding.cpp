@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (c) 2012-2013, John Haddon. All rights reserved.
+//  Copyright (c) 2024, Cinesite VFX Ltd. All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without
 //  modification, are permitted provided that the following conditions are
@@ -36,37 +36,59 @@
 
 #include "boost/python.hpp"
 
-#include "ContextAlgoBinding.h"
-#include "HierarchyViewBinding.h"
-#include "InspectorBinding.h"
-#include "SceneGadgetBinding.h"
-#include "LightEditorBinding.h"
-#include "ToolBinding.h"
-#include "ViewBinding.h"
-#include "VisualiserBinding.h"
-#include "QueryBinding.h"
-#include "SetEditorBinding.h"
-#include "RenderPassEditorBinding.h"
-#include "RenderPassPathBinding.h"
 #include "InspectorColumnBinding.h"
 
-using namespace GafferSceneUIModule;
+#include "GafferSceneUI/Private/Inspector.h"
+#include "GafferSceneUI/Private/InspectorColumn.h"
 
-BOOST_PYTHON_MODULE( _GafferSceneUI )
+#include "GafferUI/PathColumn.h"
+
+#include "IECorePython/RefCountedBinding.h"
+
+using namespace boost::python;
+using namespace IECore;
+using namespace IECorePython;
+using namespace Gaffer;
+using namespace GafferUI;
+using namespace GafferSceneUI;
+using namespace GafferSceneUI::Private;
+
+namespace
 {
 
-	bindViews();
-	bindTools();
-	bindVisualisers();
-	bindHierarchyView();
-	bindSceneGadget();
-	bindContextAlgo();
-	bindQueries();
-	bindInspector();
-	bindInspectorColumn();
-	bindLightEditor();
-	bindSetEditor();
-	bindRenderPassPath();
-	bindRenderPassEditor();
+InspectorColumn::CellData headerDataWrapper( InspectorColumn &inspectorColumn, const Canceller *canceller )
+{
+	IECorePython::ScopedGILRelease gilRelease;
+	return inspectorColumn.headerData( canceller );
+}
+
+} // namespace
+
+void GafferSceneUIModule::bindInspectorColumn()
+{
+
+	object privateModule( borrowed( PyImport_AddModule( "GafferSceneUI.Private" ) ) );
+	scope().attr( "Private" ) = privateModule;
+	scope privateScope( privateModule );
+
+	RefCountedClass<GafferSceneUI::Private::InspectorColumn, GafferUI::PathColumn>( "InspectorColumn" )
+		.def( init<GafferSceneUI::Private::InspectorPtr, const std::string &, const std::string &, PathColumn::SizeMode>(
+			(
+				arg_( "inspector" ),
+				arg_( "label" ) = "",
+				arg_( "toolTip" ) = "",
+				arg( "sizeMode" ) = PathColumn::Default
+			)
+		) )
+		.def( init<GafferSceneUI::Private::InspectorPtr, const PathColumn::CellData &, PathColumn::SizeMode>(
+			(
+				arg_( "inspector" ),
+				arg_( "headerData" ),
+				arg_( "sizeMode" ) = PathColumn::Default
+			)
+		) )
+		.def( "inspector", &InspectorColumn::inspector, return_value_policy<IECorePython::CastToIntrusivePtr>() )
+		.def( "headerData", &headerDataWrapper, ( arg_( "canceller" ) = object() ) )
+	;
 
 }
