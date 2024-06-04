@@ -454,32 +454,30 @@ class RenderPassEditor( GafferUI.NodeSetEditor ) :
 
 		renderPassPlug["value"].setValue( selectedPassNames[0] )
 
-	## \todo Consider consolidating this with `LightEditor.__editSelectedCells()`.
-	# The main difference being the name of the context variable that is set before inspection,
-	# (`renderPass` vs `scene:path`) and the source of data for that variable.
+	## \todo Consolidate this with `LightEditor.__editSelectedCells()`.
+	# Now that the path provides the context via `inspectionContext()` this should be more achievable.
 	def __editSelectedCells( self, pathListing, quickBoolean = True ) :
 
 		# A dictionary of the form :
-		# { inspector : { renderPass1 : inspection, renderPass2 : inspection, ... }, ... }
+		# { inspector : { path1 : inspection, path2 : inspection, ... }, ... }
 		inspectors = {}
 		inspections = []
 
-		with Gaffer.Context( self.getContext() ) as context :
-			renderPassPath = self.__pathListing.getPath().copy()
-			for selection, column in zip( pathListing.getSelection(), pathListing.getColumns() ) :
-				if not isinstance( column, _GafferSceneUI._RenderPassEditor.OptionInspectorColumn ) :
+		path = pathListing.getPath().copy()
+		for selection, column in zip( pathListing.getSelection(), pathListing.getColumns() ) :
+			if not isinstance( column, GafferSceneUI.Private.InspectorColumn ) :
+				continue
+			for pathString in selection.paths() :
+				path.setFromString( pathString )
+				inspectionContext = path.inspectionContext()
+				if inspectionContext is None :
 					continue
-				for path in selection.paths() :
-					renderPassPath.setFromString( path )
-					renderPassName = renderPassPath.property( "renderPassPath:name" )
-					if not renderPassName :
-						continue
 
-					context["renderPass"] = renderPassName
+				with Gaffer.Context( inspectionContext ) :
 					inspection = column.inspector().inspect()
 
 					if inspection is not None :
-						inspectors.setdefault( column.inspector(), {} )[renderPassName] = inspection
+						inspectors.setdefault( column.inspector(), {} )[pathString] = inspection
 						inspections.append( inspection )
 
 		if len( inspectors ) == 0 :
@@ -565,18 +563,17 @@ class RenderPassEditor( GafferUI.NodeSetEditor ) :
 
 		tweaks = []
 
-		with Gaffer.Context( self.getContext() ) as context :
-			renderPassPath = self.__pathListing.getPath().copy()
-			for columnSelection, column in zip( pathListing.getSelection(), pathListing.getColumns() ) :
-				if not isinstance( column, _GafferSceneUI._RenderPassEditor.OptionInspectorColumn ) :
+		path = pathListing.getPath().copy()
+		for columnSelection, column in zip( pathListing.getSelection(), pathListing.getColumns() ) :
+			if not isinstance( column, GafferSceneUI.Private.InspectorColumn ) :
+				continue
+			for pathString in columnSelection.paths() :
+				path.setFromString( pathString )
+				inspectionContext = path.inspectionContext()
+				if inspectionContext is None :
 					continue
-				for path in columnSelection.paths() :
-					renderPassPath.setFromString( path )
-					renderPassName = renderPassPath.property( "renderPassPath:name" )
-					if not renderPassName :
-						continue
 
-					context["renderPass"] = renderPassName
+				with Gaffer.Context( inspectionContext ) :
 					inspection = column.inspector().inspect()
 					if inspection is not None and inspection.editable() :
 						source = inspection.source()
@@ -588,7 +585,7 @@ class RenderPassEditor( GafferUI.NodeSetEditor ) :
 							) and
 							( editScope is None or editScope.node().isAncestorOf( source ) )
 						) :
-							tweaks.append( ( path, column.inspector() ) )
+							tweaks.append( ( pathString, column.inspector() ) )
 						else :
 							return []
 					else :
@@ -600,17 +597,17 @@ class RenderPassEditor( GafferUI.NodeSetEditor ) :
 
 		edits = self.__disablableInspectionTweaks( pathListing )
 
-		with Gaffer.UndoScope( self.scriptNode() ), Gaffer.Context( self.getContext() ) as context :
-			renderPassPath = self.__pathListing.getPath().copy()
-			for path, inspector in edits :
-				renderPassPath.setFromString( path )
-				context["renderPass"] = renderPassPath.property( "renderPassPath:name" )
-				inspection = inspector.inspect()
-				if inspection is not None and inspection.editable() :
-					source = inspection.source()
+		path = pathListing.getPath().copy()
+		with Gaffer.UndoScope( self.scriptNode() ) :
+			for pathString, inspector in edits :
+				path.setFromString( pathString )
+				with Gaffer.Context( path.inspectionContext() ) :
+					inspection = inspector.inspect()
+					if inspection is not None and inspection.editable() :
+						source = inspection.source()
 
-					if isinstance( source, ( Gaffer.TweakPlug, Gaffer.NameValuePlug ) ) :
-						source["enabled"].setValue( False )
+						if isinstance( source, ( Gaffer.TweakPlug, Gaffer.NameValuePlug ) ) :
+							source["enabled"].setValue( False )
 
 	def __selectedSetExpressions( self, pathListing ) :
 
@@ -749,18 +746,16 @@ class RenderPassEditor( GafferUI.NodeSetEditor ) :
 
 			for path in selection[i].paths() :
 				renderPassPath.setFromString( path )
-				renderPassName = renderPassPath.property( "renderPassPath:name" )
-				if renderPassName is None :
+				inspectionContext = renderPassPath.inspectionContext()
+				if inspectionContext is None :
 					continue
 
-				historyContext = Gaffer.Context( self.getContext() )
-				historyContext["renderPass"] = renderPassName
 				window = _HistoryWindow(
 					column.inspector(),
 					"/",
-					historyContext,
+					inspectionContext,
 					self.ancestor( GafferUI.ScriptWindow ).scriptNode(),
-					"History : {} : {}".format( renderPassName, column.headerData().value )
+					"History : {} : {}".format( inspectionContext["renderPass"], column.headerData().value )
 				)
 				self.ancestor( GafferUI.Window ).addChildWindow( window, removeOnClose = True )
 				window.setVisible( True )
