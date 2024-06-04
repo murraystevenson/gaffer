@@ -180,7 +180,7 @@ class RenderPassEditor( GafferUI.NodeSetEditor ) :
 		GafferSceneUI.RenderPassEditor.registerColumn(
 			groupKey,
 			optionName,
-			lambda scene, editScope : _GafferSceneUI._RenderPassEditor.OptionInspectorColumn(
+			lambda scene, editScope : GafferSceneUI.Private.InspectorColumn(
 				GafferSceneUI.Private.OptionInspector( scene, editScope, optionName ),
 				columnName,
 				toolTip
@@ -191,7 +191,7 @@ class RenderPassEditor( GafferUI.NodeSetEditor ) :
 	# Registers a column in the Render Pass Editor.
 	# `inspectorFunction` is a callable object of the form
 	# `inspectorFunction( scene, editScope )` returning a
-	# `GafferSceneUI._RenderPassEditor.OptionInspectorColumn` object.
+	# `GafferSceneUI.Private.InspectorColumn` object.
 	@classmethod
 	def registerColumn( cls, groupKey, columnKey, inspectorFunction, section = "Main" ) :
 
@@ -744,7 +744,7 @@ class RenderPassEditor( GafferUI.NodeSetEditor ) :
 
 		for i in range( 0, len( columns ) ) :
 			column = columns[ i ]
-			if not isinstance( column, _GafferSceneUI._RenderPassEditor.OptionInspectorColumn ) :
+			if not isinstance( column, GafferSceneUI.Private.InspectorColumn ) :
 				continue
 
 			for path in selection[i].paths() :
