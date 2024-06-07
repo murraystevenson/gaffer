@@ -76,6 +76,11 @@ PathFilterPtr createStandardFilter( object pythonSetNames, const std::string &se
 	return ScenePath::createStandardFilter( setNames, setsLabel );
 }
 
+ContextPtr inspectionContextWrapper( ScenePath &path, const IECore::Canceller *canceller )
+{
+	return const_cast<Context *>( path.inspectionContext( canceller ) );
+}
+
 } // namespace
 
 void GafferSceneModule::bindScenePath()
@@ -111,6 +116,7 @@ void GafferSceneModule::bindScenePath()
 		.def( "getScene", (ScenePlug *(ScenePath::*)())&ScenePath::getScene, return_value_policy<CastToIntrusivePtr>() )
 		.def( "setContext", &ScenePath::setContext )
 		.def( "getContext", (Context *(ScenePath::*)())&ScenePath::getContext, return_value_policy<CastToIntrusivePtr>() )
+		.def( "inspectionContext", &inspectionContextWrapper, ( arg_( "path" ), arg_( "canceller" ) = object() ) )
 		.def( "createStandardFilter", &createStandardFilter, (
 				arg( "setNames" ) = list(),
 				arg( "setsLabel" ) = ""

@@ -134,6 +134,14 @@ const Gaffer::Context *ScenePath::getContext() const
 	return m_context.get();
 }
 
+const Gaffer::Context *ScenePath::inspectionContext( const IECore::Canceller *canceller ) const
+{
+	ScenePlug::PathScope scope( getContext(), &( names() ) );
+	scope.setCanceller( canceller );
+
+	return new Context( *scope.context() );
+}
+
 bool ScenePath::isValid( const IECore::Canceller *canceller ) const
 {
 	if( !Path::isValid() )

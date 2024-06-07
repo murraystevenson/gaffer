@@ -27,6 +27,7 @@ API
 
 - AnnotationsGadget : Added `annotationText()` method.
 - ParallelAlgoTest : Added `UIThreadCallHandler.receive()` method.
+- ScenePath : Added `inspectionContext()` method.
 
 1.4.7.0 (relative to 1.4.6.0)
 =======
