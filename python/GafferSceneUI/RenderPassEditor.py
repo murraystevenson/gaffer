@@ -235,12 +235,12 @@ class RenderPassEditor( GafferUI.NodeSetEditor ) :
 	@staticmethod
 	def registerPathGroupingFunction( f ) :
 
-		_GafferSceneUI._RenderPassEditor.RenderPassPath.registerPathGroupingFunction( f )
+		GafferSceneUI.Private.RenderPassPath.registerPathGroupingFunction( f )
 
 	@staticmethod
 	def pathGroupingFunction() :
 
-		return _GafferSceneUI._RenderPassEditor.RenderPassPath.pathGroupingFunction()
+		return GafferSceneUI.Private.RenderPassPath.pathGroupingFunction()
 
 	def __repr__( self ) :
 
@@ -334,7 +334,7 @@ class RenderPassEditor( GafferUI.NodeSetEditor ) :
 			# control of updates ourselves in _updateFromContext(), using LazyMethod to defer the calls to this
 			# function until we are visible and playback has stopped.
 			contextCopy = Gaffer.Context( self.getContext() )
-			self.__pathListing.setPath( _GafferSceneUI._RenderPassEditor.RenderPassPath( self.__settingsNode["in"], contextCopy, "/", filter = self.__filter, grouped = self.__settingsNode["displayGrouped"].getValue() ) )
+			self.__pathListing.setPath( GafferSceneUI.Private.RenderPassPath( self.__settingsNode["in"], contextCopy, "/", filter = self.__filter, grouped = self.__settingsNode["displayGrouped"].getValue() ) )
 		else :
 			self.__pathListing.setPath( Gaffer.DictPath( {}, "/" ) )
 

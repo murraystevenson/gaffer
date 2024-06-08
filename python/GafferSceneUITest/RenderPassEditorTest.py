@@ -48,99 +48,13 @@ from GafferSceneUI import _GafferSceneUI
 
 class RenderPassEditorTest( GafferUITest.TestCase ) :
 
-	def testRenderPassPathSimpleChildren( self ) :
-
-		renderPasses = GafferScene.RenderPasses()
-		renderPasses["names"].setValue( IECore.StringVectorData( ["A", "B", "C", "D"] ) )
-
-		context = Gaffer.Context()
-		path = _GafferSceneUI._RenderPassEditor.RenderPassPath( renderPasses["out"], context, "/" )
-		self.assertTrue( path.isValid() )
-		self.assertFalse( path.isLeaf() )
-
-		children = path.children()
-		self.assertEqual( [ str( c ) for c in children ], [ "/A", "/B", "/C", "/D" ] )
-		for child in children :
-			self.assertIsInstance( child, _GafferSceneUI._RenderPassEditor.RenderPassPath )
-			self.assertTrue( child.getContext().isSame( context ) )
-			self.assertTrue( child.getScene().isSame( renderPasses["out"] ) )
-			self.assertTrue( child.isLeaf() )
-			self.assertTrue( child.isValid() )
-			self.assertEqual( child.children(), [] )
-
-	def testRenderPassPathIsValid( self ) :
-
-		renderPasses = GafferScene.RenderPasses()
-		renderPasses["names"].setValue( IECore.StringVectorData( ["A", "B", "C", "D"] ) )
-
-		path = _GafferSceneUI._RenderPassEditor.RenderPassPath( renderPasses["out"], Gaffer.Context(), "/" )
-		self.assertTrue( path.isValid() )
-		self.assertFalse( path.isLeaf() )
-
-		for parent, valid in [
-			( "/", True ),
-			( "/A", True ),
-			( "/A/B", False ),
-			( "/B", True ),
-			( "/C", True ),
-			( "/D", True ),
-			( "/E", False ),
-			( "/E/F", False ),
-		] :
-
-			path.setFromString( parent )
-			self.assertEqual( path.isValid(), valid )
-
-	def testRenderPassPathIsLeaf( self ) :
-
-		renderPasses = GafferScene.RenderPasses()
-		renderPasses["names"].setValue( IECore.StringVectorData( ["A", "B", "C", "D"] ) )
-
-		path = _GafferSceneUI._RenderPassEditor.RenderPassPath( renderPasses["out"], Gaffer.Context(), "/" )
-		self.assertTrue( path.isValid() )
-		self.assertFalse( path.isLeaf() )
-
-		for parent, leaf in [
-			( "/", False ),
-			( "/A", True ),
-			( "/A/B", False ),
-			( "/B", True ),
-			( "/C", True ),
-			( "/D", True ),
-			( "/E", False ),
-			( "/E/F", False ),
-		] :
-
-			path.setFromString( parent )
-			self.assertEqual( path.isLeaf(), leaf )
-
-	def testRenderPassPathCancellation( self ) :
-
-		plane = GafferScene.Plane()
-		path = _GafferSceneUI._RenderPassEditor.RenderPassPath( plane["out"], Gaffer.Context(), "/" )
-
-		canceller = IECore.Canceller()
-		canceller.cancel()
-
-		with self.assertRaises( IECore.Cancelled ) :
-			path.children( canceller )
-
-		with self.assertRaises( IECore.Cancelled ) :
-			path.isValid( canceller )
-
-		with self.assertRaises( IECore.Cancelled ) :
-			path.isLeaf( canceller )
-
-		with self.assertRaises( IECore.Cancelled ) :
-			path.property( "renderPassPath:enabled", canceller )
-
 	def testSearchFilter( self ) :
 
 		renderPasses = GafferScene.RenderPasses()
 		renderPasses["names"].setValue( IECore.StringVectorData( ["A", "B", "C", "D"] ) )
 
 		context = Gaffer.Context()
-		path = _GafferSceneUI._RenderPassEditor.RenderPassPath( renderPasses["out"], context, "/" )
+		path = GafferSceneUI.Private.RenderPassPath( renderPasses["out"], context, "/" )
 
 		self.assertEqual( [ str( c ) for c in path.children() ], [ "/A", "/B", "/C", "/D" ] )
 
@@ -172,7 +86,7 @@ class RenderPassEditorTest( GafferUITest.TestCase ) :
 		switch["in"]["in1"]["name"].setValue( "A D" )
 
 		context = Gaffer.Context()
-		path = _GafferSceneUI._RenderPassEditor.RenderPassPath( switch["out"]["value"], context, "/" )
+		path = GafferSceneUI.Private.RenderPassPath( switch["out"]["value"], context, "/" )
 
 		self.assertEqual( [ str( c ) for c in path.children() ], [ "/A", "/B", "/C", "/D" ] )
 
@@ -197,7 +111,7 @@ class RenderPassEditorTest( GafferUITest.TestCase ) :
 		renderPasses["names"].setValue( IECore.StringVectorData( ["char_bot_beauty", "char_bot_shadow"] ) )
 
 		context = Gaffer.Context()
-		path = _GafferSceneUI._RenderPassEditor.RenderPassPath( renderPasses["out"], context, "/" )
+		path = GafferSceneUI.Private.RenderPassPath( renderPasses["out"], context, "/" )
 
 		self.assertEqual( [ str( c ) for c in path.children() ], [ "/char_bot_beauty", "/char_bot_shadow" ] )
 
@@ -208,7 +122,7 @@ class RenderPassEditorTest( GafferUITest.TestCase ) :
 		GafferSceneUI.RenderPassEditor.registerPathGroupingFunction( testFn )
 		self.assertEqual( testFn( "/char_bot_beauty" ), GafferSceneUI.RenderPassEditor.pathGroupingFunction()( "/char_bot_beauty" ) )
 
-		path = _GafferSceneUI._RenderPassEditor.RenderPassPath( renderPasses["out"], context, "/", grouped = True )
+		path = GafferSceneUI.Private.RenderPassPath( renderPasses["out"], context, "/", grouped = True )
 
 		for parent, children in [
 			( "/", [ "/char" ] ),
@@ -224,7 +138,7 @@ class RenderPassEditorTest( GafferUITest.TestCase ) :
 			self.assertEqual( [ str( c ) for c in path.children() ], children )
 
 		# Ensure we can still get a flat output
-		path = _GafferSceneUI._RenderPassEditor.RenderPassPath( renderPasses["out"], context, "/", grouped = False )
+		path = GafferSceneUI.Private.RenderPassPath( renderPasses["out"], context, "/", grouped = False )
 		self.assertEqual( [ str( c ) for c in path.children() ], [ "/char_bot_beauty", "/char_bot_shadow" ] )
 
 	def testDisabledRenderPassFilterWithPathGroupingFunction( self ) :
@@ -249,7 +163,7 @@ class RenderPassEditorTest( GafferUITest.TestCase ) :
 
 		GafferSceneUI.RenderPassEditor.registerPathGroupingFunction( testFn )
 		context = Gaffer.Context()
-		path = _GafferSceneUI._RenderPassEditor.RenderPassPath( switch["out"]["value"], context, "/", grouped = True )
+		path = GafferSceneUI.Private.RenderPassPath( switch["out"]["value"], context, "/", grouped = True )
 
 		self.assertEqual( [ str( c ) for c in path.children() ], [ "/A", "/B" ] )
 
