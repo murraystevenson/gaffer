@@ -131,5 +131,33 @@ class RenderPassPathTest( GafferUITest.TestCase ) :
 		with self.assertRaises( IECore.Cancelled ) :
 			path.property( "renderPassPath:enabled", canceller )
 
+	def testInspectionContext( self ) :
+
+		def testFn( name ) :
+			return "/".join( name.split( "_" )[:-1] )
+
+		GafferSceneUI.Private.RenderPassPath.registerPathGroupingFunction( testFn )
+
+		renderPasses = GafferScene.RenderPasses()
+		renderPasses["names"].setValue( IECore.StringVectorData( ["A_A", "B_B", "C", "D"] ) )
+
+		for path, valid, renderPass, grouped in (
+			( "/BOGUS", False, None, False ),
+			( "/BOGUS", False, None, True ),
+			( "/A_A", True, "A_A", False ),
+			( "/A_A", False, None, True ),
+			( "/A", False, None, True ),
+			( "/A/A_A", True, "A_A", True ),
+			( "/A/A_A", False, None, False ),
+			( "/D", True, "D", True ),
+			( "/D", True, "D", False ),
+		) :
+
+			inspectionContext = GafferSceneUI.Private.RenderPassPath( renderPasses["out"], Gaffer.Context(), path, grouped = grouped ).inspectionContext()
+			if valid :
+				self.assertEqual( inspectionContext["renderPass"], renderPass )
+			else :
+				self.assertIsNone( inspectionContext )
+
 if __name__ == "__main__":
 	unittest.main()

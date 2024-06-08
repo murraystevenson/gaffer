@@ -67,6 +67,7 @@ class GAFFERSCENEUI_API RenderPassPath : public Gaffer::Path
 		void setContext( Gaffer::ContextPtr context );
 		Gaffer::Context *getContext();
 		const Gaffer::Context *getContext() const;
+		const Gaffer::Context *inspectionContext( const IECore::Canceller *canceller = nullptr ) const;
 
 		bool isValid( const IECore::Canceller *canceller = nullptr ) const override;
 		bool isLeaf( const IECore::Canceller *canceller = nullptr ) const override;

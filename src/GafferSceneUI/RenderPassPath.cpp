@@ -197,6 +197,21 @@ const Gaffer::Context *RenderPassPath::getContext() const
 	return m_context.get();
 }
 
+const Gaffer::Context *RenderPassPath::inspectionContext( const IECore::Canceller *canceller ) const
+{
+	const auto renderPassName = runTimeCast<const IECore::StringData>( property( g_renderPassNamePropertyName, canceller ) );
+	if( !renderPassName )
+	{
+		return nullptr;
+	}
+
+	Context::EditableScope scope( getContext() );
+	scope.setCanceller( canceller );
+	scope.set( g_renderPassContextName, &( renderPassName->readable() ) );
+
+	return new Context( *scope.context() );
+}
+
 bool RenderPassPath::isValid( const IECore::Canceller *canceller ) const
 {
 	if( !Path::isValid() )

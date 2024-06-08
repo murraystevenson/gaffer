@@ -108,6 +108,11 @@ object pathGroupingFunctionWrapper()
 	);
 }
 
+ContextPtr inspectionContextWrapper( RenderPassPath &path, const IECore::Canceller *canceller )
+{
+	return const_cast<Context *>( path.inspectionContext( canceller ) );
+}
+
 RenderPassPath::Ptr constructor1( ScenePlug &scene, Context &context, PathFilterPtr filter, const bool grouped )
 {
 	return new RenderPassPath( &scene, &context, filter, grouped );
@@ -160,6 +165,7 @@ void GafferSceneUIModule::bindRenderPassPath()
 		.def( "getScene", (ScenePlug *(RenderPassPath::*)())&RenderPassPath::getScene, return_value_policy<CastToIntrusivePtr>() )
 		.def( "setContext", &RenderPassPath::setContext )
 		.def( "getContext", (Context *(RenderPassPath::*)())&RenderPassPath::getContext, return_value_policy<CastToIntrusivePtr>() )
+		.def( "inspectionContext", &inspectionContextWrapper, ( arg_( "path" ), arg_( "canceller" ) = object() ) )
 		.def( "registerPathGroupingFunction", &registerPathGroupingFunctionWrapper )
 		.staticmethod( "registerPathGroupingFunction" )
 		.def( "pathGroupingFunction", &pathGroupingFunctionWrapper )
