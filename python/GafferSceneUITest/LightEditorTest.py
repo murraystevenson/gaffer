@@ -645,8 +645,11 @@ class LightEditorTest( GafferUITest.TestCase ) :
 			firstNewStates, secondNewStates = toggleData
 
 			resetEditScope()
-			editor = GafferSceneUI.LightEditor( script )
+			with GafferUI.Window() as window :
+				editor = GafferSceneUI.LightEditor( script )
 			editor._LightEditor__settingsNode["editScope"].setInput( script["editScope"]["out"] )
+			editor.setNodeSet( Gaffer.StandardSet( [ script["editScope"] ] ) )
+			window.setVisible( True )
 
 			widget = editor._LightEditor__pathListing
 			self.setLightEditorMuteSelection( widget, togglePaths )
@@ -657,7 +660,7 @@ class LightEditorTest( GafferUITest.TestCase ) :
 			editor._LightEditor__editSelectedCells( widget )
 			testLightMuteAttribute( 2, togglePaths, secondNewStates )
 
-			del widget, editor
+			del widget, editor, window
 
 	def testToggleContext( self ) :
 
@@ -694,9 +697,12 @@ class LightEditorTest( GafferUITest.TestCase ) :
 		self.assertIn( "gl:visualiser:scale", attr )
 		self.assertEqual( attr["gl:visualiser:scale"].value, 5.0 )
 
-		editor = GafferSceneUI.LightEditor( script )
-		widget = editor._LightEditor__pathListing
+		with GafferUI.Window() as window :
+			editor = GafferSceneUI.LightEditor( script )
 		editor.setNodeSet( Gaffer.StandardSet( [ script["custAttr"] ] ) )
+		window.setVisible( True )
+
+		widget = editor._LightEditor__pathListing
 		self.setLightEditorMuteSelection( widget, ["/group/light"] )
 
 		# This will raise an exception if the context is not scoped correctly.
@@ -704,6 +710,8 @@ class LightEditorTest( GafferUITest.TestCase ) :
 			widget,
 			True  # quickBoolean
 		)
+
+		del widget, editor, window
 
 	def testShaderParameterEditScope( self ) :
 
