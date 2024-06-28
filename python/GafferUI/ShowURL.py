@@ -55,4 +55,11 @@ def showURL( url ) :
 	if opener :
 		os.system( "{0} \"{1}\"".format( opener, url ) )
 	else :
+		if sys.platform == "win32" and url.startswith( "file://" ) :
+			# Windows doesn't let us reliably open "file://" URLs but
+			# somehow has no problem with opening the file itself.
+			# This means we can't support links to file anchors on
+			# Windows and need to strip them to produce a valid path.
+			url = url[7:].partition( "#" )[0]
+
 		QtGui.QDesktopServices.openUrl( QtCore.QUrl( url, QtCore.QUrl.TolerantMode ) )
