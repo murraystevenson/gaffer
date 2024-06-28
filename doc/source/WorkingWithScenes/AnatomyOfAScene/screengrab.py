@@ -8,6 +8,8 @@
 import IECore
 import time
 
+import imath
+
 import Gaffer
 import GafferUI
 
@@ -83,5 +85,6 @@ for imageName, sectionClass in [
 
 	window.resizeToFitChild()
 	window.setVisible( True )
+	window.setPosition( imath.V2i( 0, 0 ) )
 
 	GafferUI.WidgetAlgo.grab( widget = sceneInspector, imagePath = "images/sceneInspector" + imageName )
