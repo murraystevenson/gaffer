@@ -1,7 +1,10 @@
 1.4.x.x (relative to 1.4.8.0)
 =======
 
+Fixes
+-----
 
+- WidgetAlgo : Fixed issue preventing `grab()` from capturing popup menus on Windows.
 
 1.4.8.0 (relative to 1.4.7.0)
 =======

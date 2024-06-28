@@ -103,11 +103,17 @@ def grab( widget, imagePath ) :
 	if windowHandle :
 		screen = windowHandle.screen()
 
-	pixmap = screen.grabWindow( widget._qtWidget().winId() )
+	# On Windows capturing widgets with context menus is only reliable
+	# if we capture the entire screen and crop to the widget.
+	pixmap = screen.grabWindow( 0 if sys.platform == "win32" else widget._qtWidget().winId() )
 
-	if sys.platform == "darwin" and pixmap.size() == screen.size() * screen.devicePixelRatio() :
-		# A bug means that the entire screen will have been captured,
-		# not just the widget we requested. Copy out just the widget.
+	if (
+		sys.platform == "win32" or
+		( sys.platform == "darwin" and pixmap.size() == screen.size() * screen.devicePixelRatio() )
+	) :
+		# A bug on macOS or general behaviour on Windows means that
+		# the entire screen will have been captured, not just the
+		# widget we requested. Copy out just the widget.
 		topLeft = widget._qtWidget().mapToGlobal( QtCore.QPoint( 0, 0 ) )
 		bottomRight = widget._qtWidget().mapToGlobal( QtCore.QPoint( widget._qtWidget().width(), widget._qtWidget().height() ) )
 		size = bottomRight - topLeft
