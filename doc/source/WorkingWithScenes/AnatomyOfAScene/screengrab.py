@@ -88,3 +88,5 @@ for imageName, sectionClass in [
 	window.setPosition( imath.V2i( 0, 0 ) )
 
 	GafferUI.WidgetAlgo.grab( widget = sceneInspector, imagePath = "images/sceneInspector" + imageName )
+
+	del window
