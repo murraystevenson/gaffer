@@ -64,8 +64,8 @@ parser.add_argument(
 parser.add_argument(
 	"--buildEnvironment",
 	help = "The build environment of the dependencies archive to download.",
-	choices = [ "gcc11" ],
-	default = os.environ.get( "GAFFER_BUILD_ENVIRONMENT", "gcc11" if sys.platform == "linux" else "" ),
+	choices = [ "gcc11", "arm64" ],
+	default = os.environ.get( "GAFFER_BUILD_ENVIRONMENT", { "linux" : "gcc11", "darwin" : "arm64" }.get( sys.platform, "" ) ),
 )
 
 parser.add_argument(
