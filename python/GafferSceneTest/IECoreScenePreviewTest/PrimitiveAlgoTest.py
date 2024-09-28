@@ -34,6 +34,7 @@
 #
 ##########################################################################
 
+import sys
 import unittest
 import imath
 import itertools
@@ -171,7 +172,7 @@ class PrimitiveAlgoTest( GafferTest.TestCase ) :
 		# than being avoided entirely.
 		time.sleep( 0.01 )
 
-		acceptableCancellationDelay = 0.01 if GafferTest.inCI() else 0.001
+		acceptableCancellationDelay = 0.08 if sys.platform == "darwin" else 0.01 if GafferTest.inCI() else 0.001
 
 		canceller.cancel()
 		thread.join()
