@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '*_maintenance'
+      - 'cyclesDenoiseDevice'
   pull_request:
     branches:
       - '*'
