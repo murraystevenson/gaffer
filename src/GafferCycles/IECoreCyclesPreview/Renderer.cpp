@@ -2449,6 +2449,7 @@ IECore::InternedString g_frameOptionName( "frame" );
 IECore::InternedString g_cameraOptionName( "camera" );
 IECore::InternedString g_sampleMotionOptionName( "sampleMotion" );
 IECore::InternedString g_deviceOptionName( "cycles:device" );
+IECore::InternedString g_denoiseDeviceOptionName( "cycles:denoise_device" );
 IECore::InternedString g_shadingsystemOptionName( "cycles:shadingsystem" );
 IECore::InternedString g_squareSamplesOptionName( "cycles:square_samples" );
 // Logging
@@ -2827,6 +2828,7 @@ class CyclesRenderer final : public IECoreScenePreview::Renderer
 			params.threads = threads > 0 ? threads : std::max( (int)std::thread::hardware_concurrency() + threads, 1 );
 			// Device depends on threads, so do that last.
 			params.device = matchingDevices( optionValue<string>( g_deviceOptionName, "CPU", modified ), params.threads, params.background );
+			params.denoise_device = matchingDevices( optionValue<string>( g_denoiseDeviceOptionName, "CPU", modified ), params.threads, params.background );
 
 			return params;
 		}
@@ -2947,6 +2949,7 @@ class CyclesRenderer final : public IECoreScenePreview::Renderer
 			integrator->set_seed( optionValue<int>( g_seedOptionName, frame() ) );
 			integrator->set_motion_blur( optionValue<bool>( g_sampleMotionOptionName, true ) );
 			integrator->set_sampling_pattern( m_session->params.background ? ccl::SAMPLING_PATTERN_BLUE_NOISE_PURE : ccl::SAMPLING_PATTERN_BLUE_NOISE_FIRST );
+			integrator->set_denoiser_type( m_session->params.denoise_device.denoisers & ccl::DenoiserType::DENOISER_OPTIX ? ccl::DenoiserType::DENOISER_OPTIX : ccl::DenoiserType::DENOISER_OPENIMAGEDENOISE );
 
 			if( integrator->is_modified() )
 			{

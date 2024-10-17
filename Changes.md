@@ -7,6 +7,7 @@ Improvements
 - Light Editor : Added `is_sphere` column for Cycles lights.
 - Windows : Gaffer now uses the TBB memory allocator for significantly better performance.
 - ColorChooser : Changed the color field widget to a color wheel when hue is one of the varying components. [^1]
+- CyclesOptions : Added `denoiseDevice` plug for configuring the device used for denoising.
 
 API
 ---
@@ -21,6 +22,7 @@ Breaking Changes
 
 - InteractiveRenderTest : Removed `interactiveRenderNodeClass` member and `useNodeClass` argument to `_createInteractiveRender`. All testing is now performed with the InteractiveRender node itself.
 - GafferCycles : The `devices`, `nodes`, `shaders`, `lights`, and `passes` Python attributes now contain IECore.CompoundData instead of Python dictionaries.
+- CyclesOptions : Removed `denoiserType` plug. The type of denoiser is now controlled by the choice of denoising device on the `denoiseDevice` plug.
 
 1.5.0.0a3 (relative to 1.5.0.0a2)
 =========
