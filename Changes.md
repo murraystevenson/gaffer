@@ -6,6 +6,7 @@ Improvements
 
 - Light Editor : Added `is_sphere` column for Cycles lights.
 - Windows : Gaffer now uses the TBB memory allocator for significantly better performance.
+- CyclesOptions : Added `denoiseDevice` plug for configuring the device used for denoising.
 
 Breaking Changes
 ----------------
