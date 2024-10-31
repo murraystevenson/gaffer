@@ -118,8 +118,9 @@ class MenuBar( GafferUI.Widget ) :
 		if shortcutTarget is None :
 			return
 
-		if isinstance( shortcutTarget.parent(), GafferUI.Window ) :
-			shortcutTarget = shortcutTarget.parent()
+		window = shortcutTarget.ancestor( GafferUI.Window )
+		if window :
+			shortcutTarget = window
 
 		self.__shortcutEventFilter = _ShortcutEventFilter( self._qtWidget(), self )
 		shortcutTarget._qtWidget().installEventFilter( self.__shortcutEventFilter )

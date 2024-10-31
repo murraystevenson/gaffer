@@ -37,6 +37,8 @@
 
 import weakref
 
+import imath
+
 import IECore
 
 import Gaffer
@@ -57,7 +59,10 @@ class ScriptWindow( GafferUI.Window ) :
 		self.__listContainer = GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Vertical, spacing = 0 )
 
 		menuDefinition = self.menuDefinition( script.applicationRoot() ) if script.applicationRoot() else IECore.MenuDefinition()
-		self.__listContainer.append( GafferUI.MenuBar( menuDefinition ) )
+		self.__menuBar = GafferUI.MenuBar( menuDefinition )
+		self.__menuContainer = GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Horizontal, spacing = 0 )
+		self.__menuContainer.append( self.__menuBar )
+		self.__listContainer.append( self.__menuContainer )
 		# Must parent `__listContainer` to the window before setting the layout,
 		# because `CompoundEditor.__parentChanged` needs to find the ancestor
 		# ScriptWindow.
@@ -76,7 +81,7 @@ class ScriptWindow( GafferUI.Window ) :
 
 	def menuBar( self ) :
 
-		return self.__listContainer[0]
+		return self.__menuBar
 
 	def scriptNode( self ) :
 
@@ -89,6 +94,19 @@ class ScriptWindow( GafferUI.Window ) :
 
 		assert( compoundEditor.scriptNode().isSame( self.scriptNode() ) )
 		self.__listContainer.append( compoundEditor, expand=True )
+
+		if len( self.__menuContainer ) > 1 :
+			del self.__menuContainer[1]
+
+		if hasattr( compoundEditor, "settings" ) :
+			self.__menuContainer.append(
+				GafferUI.PlugLayout(
+					compoundEditor.settings(),
+					orientation = GafferUI.ListContainer.Orientation.Horizontal,
+					rootSection = "Settings"
+				)
+			)
+			self.__menuContainer.append( GafferUI.Spacer( imath.V2i( 0 ) ) )
 
 	def getLayout( self ) :
 
