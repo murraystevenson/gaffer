@@ -65,6 +65,9 @@ class SceneEditor( GafferUI.NodeSetEditor ) :
 
 		self.__parentingConnections = {}
 
+		self.__editScopePlugLinked = False
+		self.parentChangedSignal().connect( Gaffer.WeakMethod( self.__parentChanged ) )
+
 	def editScope( self ) :
 
 		editScopePlug = self.settings().getChild( "editScope" )
@@ -134,6 +137,16 @@ class SceneEditor( GafferUI.NodeSetEditor ) :
 			_reverseNodes = True,
 			_ellipsis = False
 		)
+
+	def __parentChanged( self, widget ) :
+
+		if self.__editScopePlugLinked or not self.settings().getChild( "editScope" ) :
+			return
+
+		compoundEditor = self.ancestor( GafferUI.CompoundEditor )
+		if compoundEditor and compoundEditor.settings().getChild( "editScope" ) :
+			self.settings()["editScope"].setInput( compoundEditor.settings()["editScope"] )
+			self.__editScopePlugLinked = True
 
 	def __scenePlugParentChanged( self, plug, newParent ) :
 
