@@ -65,6 +65,17 @@ class SceneEditor( GafferUI.NodeSetEditor ) :
 
 		self.__parentingConnections = {}
 
+	def editScope( self ) :
+
+		editScopePlug = self.settings().getChild( "editScope" )
+		if not editScopePlug :
+			return None
+
+		return Gaffer.PlugAlgo.findSource(
+			editScopePlug,
+			lambda plug : plug.node() if isinstance( plug.node(), Gaffer.EditScope ) else None
+		)
+
 	def _updateFromSet( self ) :
 
 		# Find ScenePlugs and connect them to `settings()["in"]`.
