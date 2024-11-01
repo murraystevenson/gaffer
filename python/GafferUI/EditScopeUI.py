@@ -214,7 +214,12 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 
 	def __acquireContextTracker( self ) :
 
-		self.__contextTracker = GafferUI.ContextTracker.acquire( self.__inputNode() )
+		if self.getPlug().node().getChild( "in" ) :
+			self.__contextTracker = GafferUI.ContextTracker.acquire( self.__inputNode() )
+		else :
+			# If our node doesn't have an `in` plug, fall back to using the focus node.
+			self.__contextTracker = GafferUI.ContextTracker.acquireForFocus( self.getPlug() )
+
 		self.__contextTrackerChangedConnection = self.__contextTracker.changedSignal().connect(
 			Gaffer.WeakMethod( self.__contextTrackerChanged ), scoped = True
 		)
@@ -228,7 +233,13 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 	def __updateMenuButton( self ) :
 
 		editScope = self.__editScope()
-		self.__menuButton.setText( editScope.getName() if editScope is not None else "None" )
+
+		if self.__followingParent() :
+			self.__menuButton._qtWidget().setMaximumWidth( 40 )
+			self.__menuButton.setText( " " )
+		else :
+			self.__menuButton._qtWidget().setMaximumWidth( 10000 )
+			self.__menuButton.setText( editScope.getName() if editScope is not None else "None" )
 
 		if editScope is not None :
 			self.__menuButton.setImage(
@@ -253,8 +264,10 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 
 	def __editScope( self ) :
 
-		input = self.getPlug().getInput()
-		return input.ancestor( Gaffer.EditScope ) if input is not None else None
+		return Gaffer.PlugAlgo.findSource(
+			self.getPlug(),
+			lambda plug : plug.node() if isinstance( plug.node(), Gaffer.EditScope ) else None
+		)
 
 	def __editScopePredicate( self, node ) :
 
@@ -270,18 +283,39 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 
 		self.getPlug().setInput( editScope["out"] )
 
+	def __connectPlug( self, plug, *ignored ) :
+
+		self.getPlug().setInput( plug )
+
+	def __followingParent( self ) :
+
+		return (
+			self.ancestor( GafferUI.CompoundEditor ) is not None and
+			self.getPlug().getInput() is not None and
+			self.getPlug().getInput() == self.ancestor( GafferUI.CompoundEditor ).settings()["editScope"]
+		)
+
 	def __inputNode( self ) :
 
 		node = self.getPlug().node()
-		# We assume that our plug is on a node dedicated to holding settings for the
-		# UI, and that it has an `in` plug that is connected to the node in the graph
-		# that is being viewed. We start our node graph traversal at the viewed node
-		# (we can't start at _this_ node, as then we will visit our own input connection
-		# which may no longer be upstream of the viewed node).
-		if node["in"].getInput() is None :
+		if not node :
 			return None
 
-		inputNode = node["in"].getInput().node()
+		if node.getChild( "in" ) :
+			# We assume that our plug is on a node dedicated to holding settings for the
+			# UI, and that it has an `in` plug that is connected to the node in the graph
+			# that is being viewed. We start our node graph traversal at the viewed node
+			# (we can't start at _this_ node, as then we will visit our own input connection
+			# which may no longer be upstream of the viewed node).
+			if node["in"].getInput() :
+				inputNode = node["in"].getInput().node()
+			else :
+				return None
+		else :
+			# If our node doesn't have an `in` plug then we fall back to using the focus node
+			# to control the input.
+			inputNode = GafferUI.ContextTracker.acquireForFocus( node ).targetNode()
+
 		if not isinstance( inputNode, Gaffer.EditScope ) and isinstance( inputNode, Gaffer.SubGraph ) :
 			# If we're starting from a SubGraph then attempt to begin the search from the
 			# first input of the node's output so we can find any Edit Scopes within.
@@ -360,7 +394,9 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 
 		currentEditScope = None
 		if self.getPlug().getInput() is not None :
-			currentEditScope = self.getPlug().getInput().parent()
+			input = self.getPlug().getInput().parent()
+			if isinstance( input, Gaffer.EditScope ) :
+				currentEditScope = input
 
 		activeEditScopes = self.__activeEditScopes()
 
@@ -393,6 +429,18 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 		result.append(
 			"/None", { "command" : functools.partial( self.getPlug().setInput, None ) },
 		)
+
+		if self.ancestor( GafferUI.CompoundEditor ) :
+			mainEditScopePlug = self.ancestor( GafferUI.CompoundEditor ).settings()["editScope"]
+			result.append( "/__FollowDivider__", { "divider" : True, "label" : "Options" } )
+			result.append(
+				"/Follow Global Edit Target",
+				{
+					"command" : functools.partial( self.__connectPlug, mainEditScopePlug ),
+					"checkBox" : self.getPlug().getInput() == mainEditScopePlug,
+					"description" : "Use the global edit target",
+				}
+			)
 
 		return result
 
