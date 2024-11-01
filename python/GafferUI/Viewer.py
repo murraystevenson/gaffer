@@ -150,10 +150,12 @@ class Viewer( GafferUI.NodeSetEditor ) :
 
 		self.__views = []
 		self.__currentView = None
+		self.__editScopeConnected = False
 
 		self.keyPressSignal().connect( Gaffer.WeakMethod( self.__keyPress ) )
 		self.contextMenuSignal().connect( Gaffer.WeakMethod( self.__contextMenu ) )
 		self.nodeSetChangedSignal().connect( Gaffer.WeakMethod( self.__updateViewportMessage ) )
+		self.parentChangedSignal().connect( Gaffer.WeakMethod( self.__parentChanged ) )
 
 		self._updateFromSet()
 
@@ -202,6 +204,7 @@ class Viewer( GafferUI.NodeSetEditor ) :
 						self.__currentView = GafferUI.View.create( plug )
 						if self.__currentView is not None:
 							Gaffer.NodeAlgo.applyUserDefaults( self.__currentView )
+							self.__connectGlobalEditScope( self.__currentView )
 							self.__views.append( self.__currentView )
 					# if we succeeded in getting a suitable view, then
 					# don't bother checking the other plugs
@@ -230,6 +233,21 @@ class Viewer( GafferUI.NodeSetEditor ) :
 	def _titleFormat( self ) :
 
 		return GafferUI.NodeSetEditor._titleFormat( self, _maxNodes = 1, _reverseNodes = True, _ellipsis = False )
+
+	def __connectGlobalEditScope( self, view ) :
+
+		compoundEditor = self.ancestor( GafferUI.CompoundEditor )
+		editScopePlug = view.getChild( "editScope" )
+		if editScopePlug and compoundEditor and compoundEditor.settings().getChild( "editScope" ) :
+			editScopePlug.setInput( compoundEditor.settings()["editScope"] )
+			self.__editScopeConnected = True
+
+	def __parentChanged( self, widget ) :
+
+		if self.__editScopeConnected or self.__currentView is None :
+			return
+
+		self.__connectGlobalEditScope( self.__currentView )
 
 	def __primaryToolChanged( self, *unused ) :
 
