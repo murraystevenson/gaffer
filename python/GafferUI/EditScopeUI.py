@@ -187,10 +187,6 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 			self.__editScopeNameChangedConnection = None
 			self.__editScopeMetadataChangedConnection = None
 
-		if self._qtWidget().property( "editScopeActive" ) != editScopeActive :
-			self._qtWidget().setProperty( "editScopeActive", GafferUI._Variant.toVariant( editScopeActive ) )
-			self._repolish()
-
 	def __updatePlugInputChangedConnection( self ) :
 
 		self.__plugInputChangedConnection = self.getPlug().node().plugInputChangedSignal().connect(

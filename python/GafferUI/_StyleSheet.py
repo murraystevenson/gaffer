@@ -1528,7 +1528,7 @@ _styleSheet = string.Template(
 		padding: 2px;
 	}
 
-	*[gafferClass="GafferUI.EditScopeUI.EditScopePlugValueWidget"][editScopeActive="true"] QPushButton[gafferWithFrame="true"][gafferMenuIndicator="true"]
+	*[gafferClass="GafferUI.EditScopeUI.EditScopePlugValueWidget"] QPushButton[gafferWithFrame="true"][gafferMenuIndicator="true"]
 	{
 		border: 1px solid rgb( 46, 75, 107 );
 		border-top-color: rgb( 75, 113, 155 );
