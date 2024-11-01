@@ -120,23 +120,20 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 
 	def __init__( self, plug, **kw ) :
 
-		self.__frame = GafferUI.Frame( borderWidth = 0 )
-		GafferUI.PlugValueWidget.__init__( self, self.__frame, plug, **kw )
+		self.__listContainer = GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Horizontal, spacing = 4 )
+		GafferUI.PlugValueWidget.__init__( self, self.__listContainer, plug, **kw )
 
-		with self.__frame :
-			with GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Horizontal, spacing = 4 ) :
-				GafferUI.Spacer( imath.V2i( 4, 1 ), imath.V2i( 4, 1 ) )
-				GafferUI.Label( "Edit Scope" )
-				self.__busyWidget = GafferUI.BusyWidget( size = 18 )
-				self.__busyWidget.setVisible( False )
-				self.__menuButton = GafferUI.MenuButton(
-					"",
-					menu = GafferUI.Menu( Gaffer.WeakMethod( self.__menuDefinition ) ),
-					highlightOnOver = False
-				)
-				# Ignore the width in X so MenuButton width is limited by the overall width of the widget
-				self.__menuButton._qtWidget().setSizePolicy( QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Fixed )
-				GafferUI.Spacer( imath.V2i( 4, 1 ), imath.V2i( 4, 1 ) )
+		with self.__listContainer :
+			GafferUI.Spacer( imath.V2i( 0 ) )
+			self.__busyWidget = GafferUI.BusyWidget( size = 18 )
+			self.__busyWidget.setVisible( False )
+			self.__menuButton = GafferUI.MenuButton(
+				"",
+				menu = GafferUI.Menu( Gaffer.WeakMethod( self.__menuDefinition ) ),
+				highlightOnOver = False
+			)
+			# Ignore the width in X so MenuButton width is limited by the overall width of the widget
+			self.__menuButton._qtWidget().setSizePolicy( QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Fixed )
 
 		self.buttonPressSignal().connect( Gaffer.WeakMethod( self.__buttonPress ) )
 		self.dragBeginSignal().connect( Gaffer.WeakMethod( self.__dragBegin ) )
@@ -227,12 +224,14 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 	def __updateMenuButton( self ) :
 
 		editScope = self.__editScope()
+		plugLayout = self.ancestor( GafferUI.PlugLayout )
+		layoutName = plugLayout.layoutName() if plugLayout else "layout"
 
 		if self.__followingParent() :
-			self.__menuButton._qtWidget().setMaximumWidth( 40 )
+			Gaffer.Metadata.registerValue( self.getPlug(), f"{layoutName}:width", 50 )
 			self.__menuButton.setText( " " )
 		else :
-			self.__menuButton._qtWidget().setMaximumWidth( 10000 )
+			Gaffer.Metadata.deregisterValue( self.getPlug(), f"{layoutName}:width" )
 			self.__menuButton.setText( editScope.getName() if editScope is not None else "None" )
 
 		if editScope is not None :
@@ -517,13 +516,13 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 			return False
 
 		if self.__dropNode( event ) :
-			self.__frame.setHighlighted( True )
+			self.__menuButton.setHighlighted( True )
 
 		return True
 
 	def __dragLeave( self, widget, event ) :
 
-		self.__frame.setHighlighted( False )
+		self.__menuButton.setHighlighted( False )
 
 		return True
 
@@ -542,7 +541,7 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 						GafferUI.Label( f"<h4>{reason}</h4>" )
 				self.__popup.popup( parent = self )
 
-		self.__frame.setHighlighted( False )
+		self.__menuButton.setHighlighted( False )
 
 		return True
 

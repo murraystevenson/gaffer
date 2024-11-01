@@ -167,6 +167,10 @@ class PlugLayout( GafferUI.Widget ) :
 
 		return self.__widgets.get( name )
 
+	def layoutName( self ) :
+
+		return self.__layoutName
+
 	## Returns the list of section names that will be used when laying
 	# out the plugs of the specified parent. The sections are returned
 	# in the order in which they will be created.
@@ -274,6 +278,8 @@ class PlugLayout( GafferUI.Widget ) :
 				self.__widgets[item] = widget
 			else :
 				widget = self.__widgets[item]
+				if self.__itemMetadataValue( item, "width" ) :
+					widget._qtWidget().setFixedWidth( self.__itemMetadataValue( item, "width" ) )
 
 			if widget is None :
 				continue
@@ -492,6 +498,7 @@ class PlugLayout( GafferUI.Widget ) :
 				self.__layoutName + ":index",
 				self.__layoutName + ":section",
 				self.__layoutName + ":accessory",
+				self.__layoutName + ":width",
 				"plugValueWidget:type"
 			) :
 				# We often see sequences of several metadata changes, so

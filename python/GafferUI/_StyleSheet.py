@@ -1519,7 +1519,6 @@ _styleSheet = string.Template(
 	*[gafferClass="GafferSceneUI.TransformToolUI._SelectionWidget"],
 	*[gafferClass="GafferSceneUI.CropWindowToolUI._StatusWidget"],
 	*[gafferClass="GafferSceneUI.TransformToolUI._TargetTipWidget"] > QFrame,
-	*[gafferClass="GafferUI.EditScopeUI.EditScopePlugValueWidget"] > QFrame,
 	*[gafferClass="GafferSceneUI.InteractiveRenderUI._ViewRenderControlUI"] > QFrame,
 	*[gafferClass="GafferSceneUI._SceneViewInspector"] > QFrame
 	{
