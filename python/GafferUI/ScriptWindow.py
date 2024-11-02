@@ -60,7 +60,8 @@ class ScriptWindow( GafferUI.Window ) :
 
 		menuDefinition = self.menuDefinition( script.applicationRoot() ) if script.applicationRoot() else IECore.MenuDefinition()
 		self.__menuBar = GafferUI.MenuBar( menuDefinition )
-		self.__menuContainer = GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Horizontal, spacing = 0 )
+		self.__menuContainer = GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Horizontal, spacing = 4 )
+		self.__menuContainer._qtWidget().setObjectName( "gafferMenuBarWidgetContainer" )
 		self.__menuContainer.append( self.__menuBar )
 		self.__listContainer.append( self.__menuContainer )
 		# Must parent `__listContainer` to the window before setting the layout,
