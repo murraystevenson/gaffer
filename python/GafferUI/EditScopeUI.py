@@ -416,7 +416,11 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 
 		result.append( "/__NoneDivider__", { "divider" : True } )
 		result.append(
-			"/None", { "command" : functools.partial( self.getPlug().setInput, None ) },
+			"/None",
+			{
+				"command" : functools.partial( self.__connectPlug, None ),
+				"checkBox" : self.getPlug().getInput() == None,
+			},
 		)
 
 		if self.ancestor( GafferUI.CompoundEditor ) :
