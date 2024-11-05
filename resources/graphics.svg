@@ -10515,7 +10515,8 @@
     </g>
     <g
        id="g11"
-       transform="translate(-1.331555,-0.505017)">
+       transform="translate(-1.331555,-0.505017)"
+       style="display:none">
       <path
          style="display:inline;fill:none;fill-opacity:0;fill-rule:evenodd;stroke:#3d3d3d;stroke-width:1.47954;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          d="m 99.087257,2724.118 h 8.513713"
@@ -10526,6 +10527,12 @@
          style="display:inline;fill:none;fill-opacity:0;fill-rule:evenodd;stroke:url(#foreground);stroke-width:1.38733;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none"
          d="m 106.58401,2728.9438 -3.25246,-3.5837 m -3.25245,3.5837 3.25245,-3.5837 m 0,10.4337 v -10.4337" />
     </g>
+    <path
+       sodipodi:nodetypes="ccccccccccccc"
+       inkscape:connector-curvature="0"
+       id="path3281-5"
+       d="m 97.846153,2725.2084 h 3.692307 l -1.846153,3.6923 h 1.846153 v 5.5384 h 0.92308 v -5.5384 h 1.84616 l -1.84616,-3.6923 h 3.69231 v -0.9231 h -8.307697 z"
+       style="display:inline;fill:#cccccc;fill-opacity:1;stroke:#3c3c3c;stroke-width:1.84615;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:1.10173;stroke-opacity:1;paint-order:markers stroke fill" />
     <g
        id="g6273"
        transform="matrix(0.83291134,0,0,0.8249516,3.9491823,572.50686)"
