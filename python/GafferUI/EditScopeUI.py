@@ -228,14 +228,14 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 			self.__menuButton.setText( " " )
 		else :
 			Gaffer.Metadata.deregisterValue( self.getPlug(), f"{layoutName}:width" )
-			self.__menuButton.setText( editScope.getName() if editScope is not None else "None" )
+			self.__menuButton.setText( editScope.getName() if editScope is not None else "Source" )
 
 		if editScope is not None :
 			self.__menuButton.setImage(
 				self.__editScopeSwatch( editScope ) if not self.__unusableReason( editScope ) else "warningSmall.png"
 			)
 		else :
-			self.__menuButton.setImage( None )
+			self.__menuButton.setImage( "menuSource.png" )
 
 	def __editScopeNameChanged( self, editScope, oldName ) :
 
@@ -414,12 +414,13 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 			result.append( "/__RefreshDivider__", { "divider" : True } )
 			result.append( "/Refresh", { "command" : Gaffer.WeakMethod( self.__refreshMenu ) } )
 
-		result.append( "/__NoneDivider__", { "divider" : True } )
+		result.append( "/__SourceDivider__", { "divider" : True } )
 		result.append(
-			"/None",
+			"/Source",
 			{
 				"command" : functools.partial( self.__connectPlug, None ),
 				"checkBox" : self.getPlug().getInput() == None,
+				"icon" : "menuSource.png",
 			},
 		)
 

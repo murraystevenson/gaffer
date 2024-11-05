@@ -3457,6 +3457,15 @@
          y="79"
          transform="matrix(0,1,1,0,0,0)"
          inkscape:label="menuBreadCrumb" />
+      <rect
+         style="fill:none;fill-opacity:1;stroke:none;stroke-width:1.4"
+         id="menuSource"
+         width="14"
+         height="14"
+         x="2670"
+         y="95"
+         transform="matrix(0,1,1,0,0,0)"
+         inkscape:label="menuSource" />
     </g>
     <path
        style="fill:none;stroke:url(#foreground);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -10503,6 +10512,19 @@
          id="path6641-0"
          inkscape:connector-curvature="0"
          sodipodi:nodetypes="cc" />
+    </g>
+    <g
+       id="g11"
+       transform="translate(-1.331555,-0.505017)">
+      <path
+         style="display:inline;fill:none;fill-opacity:0;fill-rule:evenodd;stroke:#3d3d3d;stroke-width:1.47954;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 99.087257,2724.118 h 8.513713"
+         id="path3-3"
+         sodipodi:nodetypes="cc" />
+      <path
+         id="path6641-0-7"
+         style="display:inline;fill:none;fill-opacity:0;fill-rule:evenodd;stroke:url(#foreground);stroke-width:1.38733;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none"
+         d="m 106.58401,2728.9438 -3.25246,-3.5837 m -3.25245,3.5837 3.25245,-3.5837 m 0,10.4337 v -10.4337" />
     </g>
     <g
        id="g6273"
