@@ -35,6 +35,7 @@
 ##########################################################################
 
 import collections
+import functools
 import imath
 import traceback
 
@@ -898,3 +899,103 @@ class _AddButtonMenuSignal( Gaffer.Signals.Signal2 ) :
 				)
 				# Remove circular references that would keep the widget in limbo.
 				e.__traceback__ = None
+
+class RenderPassSelector( GafferUI.Widget ) :
+
+	def __init__( self, settingsNode, **kw ) :
+
+		self.__layout = GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Horizontal, spacing = 4 )
+
+		with self.__layout :
+			GafferUI.Label( "Render Pass" )
+			self.__menuButton = GafferUI.MenuButton(
+				"None",
+				menu = GafferUI.Menu( Gaffer.WeakMethod( self.__renderPassMenu ) )
+			)
+			self.__menuButton._qtWidget().setFixedWidth( 150 )
+
+		GafferUI.Widget.__init__( self, self.__layout, **kw )
+
+		self.__acquireContextTracker()
+
+	def __scriptNode( self ) :
+
+		if self.ancestor( GafferUI.ScriptWindow ) :
+			return self.ancestor( GafferUI.ScriptWindow ).scriptNode()
+
+		return None
+
+	def __acquireContextTracker( self ) :
+
+		self.__contextTracker = GafferUI.ContextTracker.acquireForFocus( self.__scriptNode() )
+
+		self.__contextTrackerChangedConnection = self.__contextTracker.changedSignal().connect(
+			Gaffer.WeakMethod( self.__contextTrackerChanged ), scoped = True
+		)
+
+	def __contextTrackerChanged( self, contextTracker ) :
+
+		self.__menuButton.setText( self.__currentRenderPass() or "None" )
+
+	def __currentRenderPass( self ) :
+
+		target = self.__contextTracker.targetNode()
+		if target is None :
+			return ""
+
+		return self.__contextTracker.context( target ).get( "renderPass", "" )
+
+	def __enabledRenderPasses( self ) :
+
+		self.__acquireContextTracker()
+		target = self.__contextTracker.targetNode()
+		if target is None :
+			return []
+
+		with self.__contextTracker.context( target ) :
+
+			g = target["out"]["globals"].getValue()
+			return sorted( list( g.get( "option:renderPass:names", IECore.StringVectorData( [] ) ) ) )
+
+	def __setRenderPass( self, renderPass, *unused ) :
+
+		script = self.__scriptNode()
+
+		if "renderPass" not in script["variables"] :
+			renderPassPlug = Gaffer.NameValuePlug( "renderPass", "", "renderPass", flags = Gaffer.Plug.Flags.Default | Gaffer.Plug.Flags.Dynamic )
+			script["variables"].addChild( renderPassPlug )
+			Gaffer.MetadataAlgo.setReadOnly( renderPassPlug["name"], True )
+		else :
+			renderPassPlug = script["variables"]["renderPass"]
+
+		renderPassPlug["value"].setValue( renderPass )
+		self.__menuButton.setText( renderPass or "None" )
+
+	def __renderPassMenu( self ) :
+
+		result = IECore.MenuDefinition()
+
+		for name in self.__enabledRenderPasses() :
+			result.append(
+				name,
+				{
+					"command" : functools.partial( self.__setRenderPass, name ),
+					"label" : name,
+					"checkBox" : name == self.__currentRenderPass()
+				}
+			)
+
+		result.append( "/__NoneDivider__", { "divider" : True } )
+
+		result.append(
+			"/None",
+			{
+				"command" : functools.partial( self.__setRenderPass, "" ),
+				"label" : "None",
+				"checkBox" : self.__currentRenderPass() == ""
+			}
+		)
+
+		return result
+
+RenderPassEditor.RenderPassSelector = RenderPassSelector
