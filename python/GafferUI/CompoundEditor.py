@@ -1687,6 +1687,7 @@ Gaffer.Metadata.registerNode(
 
 			"plugValueWidget:type", "GafferUI.EditScopeUI.EditScopePlugValueWidget",
 			"layout:width", 190,
+			"editScopePlugValueWidget:showLabel", True,
 
 		],
 

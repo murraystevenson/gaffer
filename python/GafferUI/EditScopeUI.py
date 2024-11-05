@@ -124,7 +124,8 @@ class EditScopePlugValueWidget( GafferUI.PlugValueWidget ) :
 		GafferUI.PlugValueWidget.__init__( self, self.__listContainer, plug, **kw )
 
 		with self.__listContainer :
-			GafferUI.Spacer( imath.V2i( 0 ) )
+			if Gaffer.Metadata.value( plug, "editScopePlugValueWidget:showLabel" ) :
+				self.__label = GafferUI.Label( "Edit Target" )
 			self.__busyWidget = GafferUI.BusyWidget( size = 18 )
 			self.__busyWidget.setVisible( False )
 			self.__menuButton = GafferUI.MenuButton(
