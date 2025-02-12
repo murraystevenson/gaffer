@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '*_maintenance'
+      - 'ubuntu2204'
   pull_request:
     branches:
       - '*'
