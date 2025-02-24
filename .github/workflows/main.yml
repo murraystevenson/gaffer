@@ -103,7 +103,6 @@ jobs:
         Xvfb :99 -screen 0 1280x1024x24 &
         metacity --display :99.0 &
         useradd -m testUser
-        echo LD_PRELOAD=libSegFault.so >> $GITHUB_ENV
         # The Docker container configures bash shells such that they enable the
         # software collections we want. If we could set GitHub's
         # `defaults.run.shell` to `bash` then all our build steps would pick up
@@ -187,6 +186,8 @@ jobs:
         echo "::add-matcher::./.github/workflows/main/problemMatchers/unittest.json"
         ${{ matrix.testRunner }} "${{ env.GAFFER_BUILD_DIR }}/bin/gaffer test ${{ matrix.testArguments }}"
         echo "::remove-matcher owner=unittest::"
+      env:
+        LD_PRELOAD: libSegFault.so
 
     - name: Build and test Arnold extension
       run: |
@@ -224,6 +225,7 @@ jobs:
         PYTHONUTF8: 1
         ARNOLD_DOWNLOAD_USER: ${{ secrets.ARNOLD_DOWNLOAD_USER }}
         ARNOLD_DOWNLOAD_PASSWORD: ${{ secrets.ARNOLD_DOWNLOAD_PASSWORD }}
+        LD_PRELOAD: libSegFault.so
       shell: python
       # We can't build GafferArnold for pull requests from forks, because the
       # authentication secrets for downloading Arnold aren't available (this is
@@ -243,6 +245,7 @@ jobs:
         echo "::remove-matcher owner=sphinx::"
       env:
         PYTHONUTF8: 1
+        LD_PRELOAD: libSegFault.so
       if: matrix.publish
 
     - name: Validate
