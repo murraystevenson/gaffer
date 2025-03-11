@@ -1894,7 +1894,8 @@ for libraryName, libraryDef in libraries.items() :
 
 		subprocess.check_call(
 			[
-				shutil.which( "usdGenSchema.cmd" if sys.platform == "win32" else "usdGenSchema", path = commandEnv["ENV"]["PATH"] ),
+				shutil.which( "python", path = commandEnv["ENV"]["PATH"] ),
+				shutil.which( "usdGenSchema", path = commandEnv["ENV"]["PATH"] ),
 				str( source[0] ), targetDir
 			],
 			env = commandEnv["ENV"]
