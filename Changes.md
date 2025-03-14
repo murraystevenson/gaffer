@@ -1,6 +1,11 @@
 1.5.x.x (relative to 1.5.8.0)
 =======
 
+Features
+--------
+
+- Cycles : Added support for light-linking.
+
 Fixes
 -----
 
