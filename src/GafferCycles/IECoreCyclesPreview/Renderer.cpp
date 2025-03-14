@@ -859,14 +859,13 @@ class LightLinkSet : public LinkSetBase
 		{
 			for( ccl::Node *node : m_nodes )
 			{
-				if ( !node ) continue;
-				if( node->is_a( ccl::Light::get_node_type() ) )
+				if( node && node->is_a( ccl::Light::get_node_type() ) )
 				{
 					ccl::Light *light = static_cast<ccl::Light*>( node );
 					uint64_t membership = light->get_light_set_membership();
 					light->set_light_set_membership( membership | ( uint64_t( 1 ) << uint64_t( index ) ) );
 				}
-				else if( node->is_a( ccl::Object::get_node_type() ) )
+				else if( node && node->is_a( ccl::Object::get_node_type() ) )
 				{
 					ccl::Object *object = static_cast<ccl::Object*>( node );
 					uint64_t membership = object->get_light_set_membership();
@@ -893,14 +892,13 @@ class ShadowLinkSet : public LinkSetBase
 		{
 			for( ccl::Node *node : m_nodes )
 			{
-				if ( !node ) continue;
-				if( node->is_a( ccl::Light::get_node_type() ) )
+				if( node && node->is_a( ccl::Light::get_node_type() ) )
 				{
 					ccl::Light *light = static_cast<ccl::Light*>( node );
 					uint64_t membership = light->get_shadow_set_membership();
 					light->set_shadow_set_membership( membership | ( uint64_t( 1 ) << uint64_t( index ) ) );
 				}
-				else if( node->is_a( ccl::Object::get_node_type() ) )
+				else if( node && node->is_a( ccl::Object::get_node_type() ) )
 				{
 					ccl::Object *object = static_cast<ccl::Object*>( node );
 					uint64_t membership = object->get_shadow_set_membership();
@@ -1119,7 +1117,12 @@ class LightLinkSetCache : public LinkSetCacheBase
 
 		void update()
 		{
-			if( m_needUpdate && !m_link )
+			if( !m_needUpdate )
+			{
+				return;
+			}
+
+			if( !m_link )
 			{
 				// Set to cycles defaults aka no links
 				for( ccl::Light *light : m_scene->lights )
@@ -1136,8 +1139,6 @@ class LightLinkSetCache : public LinkSetCacheBase
 				return;
 			}
 
-			if( !m_needUpdate ) return;
-
 			// Set all to 0 and fill out the bitmasks
 			for( ccl::Light *light : m_scene->lights )
 			{
@@ -1148,28 +1149,8 @@ class LightLinkSetCache : public LinkSetCacheBase
 				object->set_light_set_membership( 0 );
 			}
 
-			// Set default light memberships
-			Cache::const_accessor a;
-			if( m_cache.find( a, m_defaultLinkSetHash ) )
-			{
-				a->second->update( 0 );
-			}
-
-			// As well as any objects that are in the default receiver light set
-			for( LinkSetMap::iterator it = m_linkSetMap.begin(), eIt = m_linkSetMap.end(); it != eIt; ++it )
-			{
-				if( it->first == m_defaultLinkSetHash )
-				{
-					for( ccl::Object *object : it->second )
-					{
-						if ( !object ) continue;
-						object->set_receiver_light_set( 0 );
-					}
-					break;
-				}
-			}
-
 			uint32_t i = 1;
+			uint32_t lightSet = 0;
 			for( LinkSetMap::iterator it = m_linkSetMap.begin(), eIt = m_linkSetMap.end(); it != eIt; ++it )
 			{
 				if( i == LIGHT_LINK_SET_MAX )
@@ -1181,21 +1162,26 @@ class LightLinkSetCache : public LinkSetCacheBase
 					break;
 				}
 
-				if( it->first != m_defaultLinkSetHash )
-				{
-					// Now set the objects that need to be in a particular receiver index
-					for( ccl::Object *object : it->second )
-					{
-						if ( !object ) continue;
-						object->set_receiver_light_set( i );
-					}
+				lightSet = it->first == m_defaultLinkSetHash ? 0 : i;
 
-					// And set the bitflags on the lights and meshlights
-					Cache::const_accessor a;
-					if( m_cache.find( a, it->first ) )
+				// Now set the objects that need to be in a particular receiver index
+				for( ccl::Object *object : it->second )
+				{
+					if( object )
 					{
-						a->second->update( i );
+						object->set_receiver_light_set( lightSet );
 					}
+				}
+
+				// And set the bitflags on the lights and meshlights
+				Cache::const_accessor a;
+				if( m_cache.find( a, it->first ) )
+				{
+					a->second->update( lightSet );
+				}
+
+				if( lightSet != 0 )
+				{
 					i++;
 				}
 			}
@@ -1275,7 +1261,12 @@ class ShadowLinkSetCache : public LinkSetCacheBase
 
 		void update()
 		{
-			if( m_needUpdate && !m_link )
+			if( !m_needUpdate )
+			{
+				return;
+			}
+
+			if( !m_link )
 			{
 				for( ccl::Light *light : m_scene->lights )
 				{
@@ -1288,8 +1279,6 @@ class ShadowLinkSetCache : public LinkSetCacheBase
 				}
 				m_needUpdate = false;
 			}
-
-			if( !m_needUpdate ) return;
 
 			// Set all to 0 and fill out the bitmasks
 			for( ccl::Light *light : m_scene->lights )
@@ -1315,8 +1304,10 @@ class ShadowLinkSetCache : public LinkSetCacheBase
 				{
 					for( ccl::Object *object : it->second )
 					{
-						if ( !object ) continue;
-						object->set_blocker_shadow_set( 0 );
+						if( object )
+						{
+							object->set_blocker_shadow_set( 0 );
+						}
 					}
 					break;
 				}
@@ -1385,7 +1376,7 @@ IECore::InternedString g_lightAttributeName( "light" );
 IECore::InternedString g_muteLightAttributeName( "light:mute" );
 // Standard light-linking
 IECore::InternedString g_linkedLightsAttributeName( "linkedLights" );
-IECore::InternedString g_shadowGroupAttributeName( "cycles:shadowgroup" );
+IECore::InternedString g_shadowGroupAttributeName( "ai:visibility:shadow_group" );
 IECore::InternedString g_defaultLightsSetName( "defaultLights" );
 IECore::InternedString g_lightsSetName( "__lights" );
 // Cycles Attributes
@@ -1582,11 +1573,9 @@ class CyclesAttributes : public IECoreScenePreview::Renderer::AttributesInterfac
 
 			// Link set hash
 			const StringData *linkedLightsExpressionData = attributes->member<StringData>( g_linkedLightsAttributeName );
-			const std::string linkedLightsExpression = linkedLightsExpressionData ? linkedLightsExpressionData->readable() : g_defaultLightsSetName.c_str();
-			m_lightSetHash.append( linkedLightsExpression );
+			m_lightSetHash.append( linkedLightsExpressionData ? linkedLightsExpressionData->readable() : g_defaultLightsSetName.c_str() );
 			const StringData *shadowGroupExpressionData = attributes->member<StringData>( g_shadowGroupAttributeName );
-			const std::string shadowGroupExpression = shadowGroupExpressionData ? shadowGroupExpressionData->readable() : g_lightsSetName.c_str();
-			m_shadowSetHash.append( shadowGroupExpression );
+			m_shadowSetHash.append( shadowGroupExpressionData ? shadowGroupExpressionData->readable() : g_lightsSetName.c_str() );
 		}
 
 		bool applyObject( ccl::Object *object, const CyclesAttributes *previousAttributes ) const
@@ -2677,54 +2666,7 @@ class CyclesObject : public IECoreScenePreview::Renderer::ObjectInterface
 				return;
 			}
 
-			if( objects )
-			{
-				vector<ccl::Node*> cyclesNodes; cyclesNodes.reserve( objects->size() );
-				for( const auto &o : *objects )
-				{
-					auto cyclesLight = dynamic_cast<const CyclesLight *>( o.get() );
-					if( cyclesLight && cyclesLight->light() )
-					{
-						ccl::Light *light = cyclesLight->light();
-						cyclesNodes.push_back( (ccl::Node *)light );
-					}
-					auto cyclesObject = dynamic_cast<const CyclesObject *>( o.get() );
-					if( cyclesObject && cyclesObject->object() )
-					{
-						ccl::Object *object = cyclesObject->object();
-						cyclesNodes.push_back( (ccl::Node *)object );
-					}
-				}
-
-				// Store objects/lights in a linkset cache, we will set the right membership
-				// bitflags in the update before rendering once we have an in-order list of
-				// linksets mapped and can assign the index number.
-				if( type == g_lights )
-				{
-					m_lightLinkSetCache->link( true );
-					if( objects->size() || m_attributes->lightSetHash() == m_lightLinkSetCache->defaultLinkSetHash() )
-					{
-						m_lightSet = m_lightLinkSetCache->get( m_attributes->lightSetHash(), cyclesNodes );
-					}
-					else
-					{
-						m_lightSet = nullptr;
-					}
-				}
-				else if( type == g_shadowGroupAttributeName )
-				{
-					m_shadowLinkSetCache->link( true );
-					if( objects->size() || m_attributes->shadowSetHash() == m_shadowLinkSetCache->defaultLinkSetHash() )
-					{
-						m_shadowSet == m_shadowLinkSetCache->get( m_attributes->shadowSetHash(), cyclesNodes );
-					}
-					else
-					{
-						m_shadowSet = nullptr;
-					}
-				}
-			}
-			else
+			if( !objects )
 			{
 				// No links, use the objects nullptr as an indicator that we have
 				// no links in the scene and we will flag all objects/lights as
@@ -2737,6 +2679,54 @@ class CyclesObject : public IECoreScenePreview::Renderer::ObjectInterface
 				else if( type == g_shadowGroupAttributeName )
 				{
 					m_shadowLinkSetCache->link( false );
+					m_shadowSet = nullptr;
+				}
+				return;
+			}
+
+			vector<ccl::Node*> cyclesNodes; cyclesNodes.reserve( objects->size() );
+			for( const auto &o : *objects )
+			{
+				if( auto cyclesLight = dynamic_cast<const CyclesLight *>( o.get() ) )
+				{
+					if( ccl::Light *light = cyclesLight->light() )
+					{
+						cyclesNodes.push_back( (ccl::Node *)light );
+					}
+				}
+				if( auto cyclesObject = dynamic_cast<const CyclesObject *>( o.get() ) )
+				{
+					if( ccl::Object *object = cyclesObject->object() )
+					{
+						cyclesNodes.push_back( (ccl::Node *)object );
+					}
+				}
+			}
+
+			// Store objects/lights in a linkset cache, we will set the right membership
+			// bitflags in the update before rendering once we have an in-order list of
+			// linksets mapped and can assign the index number.
+			if( type == g_lights )
+			{
+				m_lightLinkSetCache->link( true );
+				if( objects->size() || m_attributes->lightSetHash() == m_lightLinkSetCache->defaultLinkSetHash() )
+				{
+					m_lightSet = m_lightLinkSetCache->get( m_attributes->lightSetHash(), cyclesNodes );
+				}
+				else
+				{
+					m_lightSet = nullptr;
+				}
+			}
+			else if( type == g_shadowGroupAttributeName )
+			{
+				m_shadowLinkSetCache->link( true );
+				if( objects->size() || m_attributes->shadowSetHash() == m_shadowLinkSetCache->defaultLinkSetHash() )
+				{
+					m_shadowSet = m_shadowLinkSetCache->get( m_attributes->shadowSetHash(), cyclesNodes );
+				}
+				else
+				{
 					m_shadowSet = nullptr;
 				}
 			}

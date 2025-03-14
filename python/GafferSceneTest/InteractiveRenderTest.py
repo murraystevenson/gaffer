@@ -2075,6 +2075,8 @@ class InteractiveRenderTest( GafferSceneTest.SceneTestCase ) :
 		s["l"], colorPlug = self._createPointLight()
 		colorPlug.setValue( imath.Color3f( 1, 0.5, 0.25 ) )
 		s["l"]["transform"]["translate"]["z"].setValue( 1 )
+		s["l"]["name"].setValue( "light" )
+		s["l"]["sets"].setValue( "myLightSet" )
 
 		s["p"] = GafferScene.Plane()
 
@@ -2114,8 +2116,11 @@ class InteractiveRenderTest( GafferSceneTest.SceneTestCase ) :
 		s["o"]["options"]["renderCamera"]["enabled"].setValue( True )
 		s["o"]["in"].setInput( s["d"]["out"] )
 
+		s["sa"] = GafferScene.StandardAttributes()
+		s["sa"]["in"].setInput( s["o"]["out"] )
+
 		s["r"] = self._createInteractiveRender()
-		s["r"]["in"].setInput( s["o"]["out"] )
+		s["r"]["in"].setInput( s["sa"]["out"] )
 
 		# Start a render, give it time to finish, and check the output.
 
@@ -2135,8 +2140,34 @@ class InteractiveRenderTest( GafferSceneTest.SceneTestCase ) :
 		c = self._color3fAtUV( s["catalogue"], imath.V2f( 0.5 ) )
 		self.assertEqual( c, imath.Color3f( 0, 0, 0 ) )
 
-		# \todo: This should also test the light linking functionaly provided by
-		# StandardAttributes
+		s["sa"]["attributes"]["linkedLights"]["enabled"].setValue( True )
+		s["sa"]["attributes"]["linkedLights"]["value"].setValue( "/group/light" )
+
+		self.uiThreadCallHandler.waitFor( 2 )
+
+		c = self._color3fAtUV( s["catalogue"], imath.V2f( 0.5 ) )
+		self.assertEqual( c / c[0], imath.Color3f( 1, 0.5, 0.25 ) )
+
+		s["sa"]["attributes"]["linkedLights"]["value"].setValue( "/notALight" )
+
+		self.uiThreadCallHandler.waitFor( 2 )
+
+		c = self._color3fAtUV( s["catalogue"], imath.V2f( 0.5 ) )
+		self.assertEqual( c, imath.Color3f( 0, 0, 0 ) )
+
+		s["sa"]["attributes"]["linkedLights"]["value"].setValue( "myLightSet" )
+
+		self.uiThreadCallHandler.waitFor( 2 )
+
+		c = self._color3fAtUV( s["catalogue"], imath.V2f( 0.5 ) )
+		self.assertEqual( c / c[0], imath.Color3f( 1, 0.5, 0.25 ) )
+
+		s["sa"]["attributes"]["linkedLights"]["value"].setValue( "myLightSet /notALight" )
+
+		self.uiThreadCallHandler.waitFor( 2 )
+
+		c = self._color3fAtUV( s["catalogue"], imath.V2f( 0.5 ) )
+		self.assertEqual( c / c[0], imath.Color3f( 1, 0.5, 0.25 ) )
 
 		s["r"]["state"].setValue( s["r"].State.Stopped )
 
