@@ -3154,7 +3154,10 @@ class CyclesRenderer final : public IECoreScenePreview::Renderer
 			params.device = matchingDevices( optionValue<string>( g_deviceOptionName, "CPU", modified ), params.threads, params.background );
 			// Denoise device depends on the chosen denoiser.
 			const ccl::DenoiserType denoiser = nameToDenoiseTypeEnum( optionValue<string>( g_denoiserTypeOptionName, "openimagedenoise", modified ) );
-			params.denoise_device = matchingDevices( optionValue<string>( g_denoiseDeviceOptionName, "*", modified ), params.threads, params.background, denoiser );
+			if( denoiser != ccl::DenoiserType::DENOISER_NONE )
+			{
+				params.denoise_device = matchingDevices( optionValue<string>( g_denoiseDeviceOptionName, "*", modified ), params.threads, params.background, denoiser );
+			}
 
 			return params;
 		}
