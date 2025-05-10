@@ -591,7 +591,9 @@ class WidgetTest( GafferUITest.TestCase ) :
 		self.assertEqual( window2.getChild().displayTransformChanges, [] )
 
 		window1.addChildWindow( window2 )
-		self.assertEqual( window2.getChild().displayTransformChanges, [ displayTransform1 ] )
+		# On macOS we see two display transform changes due to the order of operations
+		# workaround in `GafferUI.Window.addChildWindow()`
+		self.assertEqual( window2.getChild().displayTransformChanges, [ displayTransform1, displayTransform1 ] if sys.platform == "darwin" else [ displayTransform1 ] )
 
 		# But not if the child window already has its own transform.
 
