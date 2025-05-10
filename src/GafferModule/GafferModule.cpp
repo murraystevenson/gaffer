@@ -95,7 +95,7 @@
 
 #ifdef __APPLE__
 #include <crt_externs.h>
-static char **environ = *_NSGetEnviron();
+#define environ (*_NSGetEnviron())
 #endif
 
 #ifdef _MSC_VER
