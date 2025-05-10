@@ -52,6 +52,7 @@ import GafferScene
 import GafferSceneTest
 
 @unittest.skipIf( GafferTest.inCI(), "OpenGL not set up" )
+@unittest.skipIf( sys.platform == "darwin", "OpenGL deprecated on macOS" )
 class OpenGLShaderTest( GafferSceneTest.SceneTestCase ) :
 
 	def test( self ) :
