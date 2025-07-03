@@ -6,7 +6,7 @@
    height="1000"
    id="svg2"
    version="1.1"
-   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
    sodipodi:docname="graphics.svg"
    enable-background="new"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
@@ -8708,27 +8708,19 @@
          height="16"
          x="450.50003"
          y="140.36218" />
-      <rect
-         y="148.36218"
-         x="452.50003"
-         height="1"
-         width="13"
-         id="rect2073"
-         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:7.44759;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill" />
-      <rect
-         transform="rotate(90)"
-         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:7.44759;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
-         id="rect2075"
-         width="13"
-         height="1"
-         x="142.36218"
-         y="-459.50003" />
       <circle
-         r="2"
-         cy="148.86218"
-         cx="459.00003"
+         cy="148.36218"
+         cx="458.50003"
+         id="circle2535"
+         style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.999997;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
+         rx="3.4999995"
+         ry="3.5000005" />
+      <circle
+         r="2.5000005"
+         cy="148.36218"
+         cx="458.50003"
          id="path2077"
-         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:8;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill" />
+         style="fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:1;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill" />
     </g>
     <g
        transform="translate(-371.50003,2214)"
