@@ -83,6 +83,7 @@ class Menu( GafferUI.Widget ) :
 		self._qtWidget().aboutToShow.connect( Gaffer.WeakMethod( self.__show ) )
 		self._qtWidget().aboutToHide.connect( Gaffer.WeakMethod( self.__hide ) )
 		self._qtWidget().hovered.connect( Gaffer.WeakMethod( self.__actionHovered ) )
+		self._qtWidget().triggered.connect( Gaffer.WeakMethod( self.__menuTriggered ) )
 
 		self.__lastHoverAction = None
 
@@ -173,6 +174,21 @@ class Menu( GafferUI.Widget ) :
 			return self.__argNames( function.func )
 
 		return []
+
+	def __menuTriggered( self, action ) :
+
+		if action.item.checkBox :
+			# Actions with `checkBox` will have already done
+			# the work below via connections to their `toggled`
+			# signal created in `__buildAction()`, so we
+			# return to avoid doing double work here.
+			return
+
+		checked = action.isChecked()
+		if self.__searchable :
+			self.__menuActionTriggered( action, checked )
+
+		self.__actionTriggered( weakref.ref( action ), checked )
 
 	def __actionTriggered( self, qtActionWeakRef, toggled ) :
 
@@ -384,17 +400,16 @@ class Menu( GafferUI.Widget ) :
 			if checked is not None :
 				qtAction.setChecked( checked )
 
-		if item.command :
+		if item.command and item.checkBox :
 
-			if item.checkBox :
-				signal = qtAction.toggled[bool]
-			else :
-				signal = qtAction.triggered[bool]
+			## \todo Do we need this connection to `toggled` or can this all be handled
+			# by `__menuTriggered()`?
+			signal = qtAction.toggled[bool]
 
 			if self.__searchable :
-				signal.connect( IECore.curry( Gaffer.WeakMethod( self.__menuActionTriggered ), qtAction ) )
+				signal.connect( functools.partial( Gaffer.WeakMethod( self.__menuActionTriggered ), qtAction ) )
 
-			signal.connect( IECore.curry( Gaffer.WeakMethod( self.__actionTriggered ), weakref.ref( qtAction ) ) )
+			signal.connect( functools.partial( Gaffer.WeakMethod( self.__actionTriggered ), weakref.ref( qtAction ) ) )
 
 		active = self.__evaluateItemValue( item.active )
 		qtAction.setEnabled( active )
