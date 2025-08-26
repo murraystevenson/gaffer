@@ -21,6 +21,7 @@ Fixes
   - Renamed OpenGL "Shading" section to "Drawing", to match the NodeEditor.
 - ImageReader : Adjusted default `channelInterpretation` heuristics to better match Nuke's behaviour for single-part EXR files with bogus part name metadata (#6527). In this case, the part name is no longer used as the layer name.
 - TweakPlug : Fixed handling of default values for `name`, `enabled` and `mode` child plugs during serialisation and in `createCounterPart()` (#6544) [^1].
+- Arnold : Fixed plugin crashes caused by conflicts with Arnold's internal memory allocator [^1].
 
 API
 ---
