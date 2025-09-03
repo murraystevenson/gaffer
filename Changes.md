@@ -10,7 +10,7 @@ Improvements
 - SceneInspector, LightEditor, Viewer : Shader parameters with input connections now show the connection source name instead of the plug value. The input shader can be selected via the context menu.
 - Layout menu : Sorted the editor creation items alphabetically.
 - SceneInspector : Improved search filter widget.
-- AttributeEditor, HierarchyView, SceneInspector  : Improved search filter widgets.
+- AttributeEditor, HierarchyView, RenderPassEditor, SceneInspector  : Improved search filter widgets.
 
 Fixes
 -----
@@ -24,6 +24,7 @@ API
 - BoolPlug : Added `boolPlugValueWidget:labelVisible` metadata, which can be used to show the plug's name to the right of the icon.
 - SceneEditor : Added `withHierarchyFilter` argument to Settings node. This provides a standard way of filtering the input scene before display, with the filtered scene being provided on the `editor.settings()["__filteredIn"]` plug.
 - AttributeEditor, HierarchyView : Added `filter` and `setFilter` plugs to the `settings()` node.
+- RenderPassEditor : Added `filter` and `hideDisabled` plugs to the `settings()` node.
 
 1.6.0.0 (relative to 1.5.16.2)
 =======
