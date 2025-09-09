@@ -11,6 +11,7 @@ Improvements
 - Layout menu : Sorted the editor creation items alphabetically.
 - SceneInspector : Improved search filter widget.
 - AttributeEditor, HierarchyView, RenderPassEditor, SceneInspector, SetEditor : Improved search filter widgets.
+- Spreadsheet : Clicking on the search icon now moves the keyboard focus to the search field ready for editing.
 
 Fixes
 -----
