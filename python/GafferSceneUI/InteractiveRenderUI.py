@@ -445,6 +445,15 @@ Gaffer.Metadata.registerNode(
 
 		],
 
+		"useVisibleSet" : [
+
+			"description",
+			"""
+			When on, the Visible Set will control which locations are rendered.
+			""",
+
+		],
+
 		"resolvedRenderer" : [
 
 			"description",

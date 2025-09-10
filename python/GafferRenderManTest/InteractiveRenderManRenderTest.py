@@ -58,6 +58,13 @@ class InteractiveRenderManRenderTest( GafferSceneTest.InteractiveRenderTest ) :
 		# edits and RenderMan is only re-rendering the requested area.
 		pass
 
+	## \todo Remove once `render:camera` option updates are supported in
+	# interactive RenderMan renders.
+	@unittest.skip( "Changing the render:camera option during an interactive render doesn't change the render camera" )
+	def testVisibleSetRenderCameraUpdate( self ) :
+
+		pass
+
 	def _createConstantShader( self ) :
 
 		shader = GafferRenderMan.RenderManShader()
