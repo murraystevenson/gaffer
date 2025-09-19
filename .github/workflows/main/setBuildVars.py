@@ -93,7 +93,9 @@ if os.environ.get( "GITHUB_EVENT_NAME" ) == "pull_request" :
 # or manual retry for a specific tag).
 
 tag = ""
-if "/tags" in os.environ["GITHUB_REF"] :
+if os.environ.get( "GAFFER_NIGHTLY_BUILD" ) == "1" :
+	tag = "nightly"
+elif "/tags" in os.environ["GITHUB_REF"] :
 	tag = os.environ["GITHUB_REF"].replace( "refs/tags/", "" )
 
 ## Release ID
@@ -113,7 +115,7 @@ if tag :
 			releaseId = r.id
 			break
 
-if releaseId :
+if releaseId and tag != "nightly" :
 
 	# Check that the version specified by the SConstruct matches the
 	# version in the tag.
@@ -137,6 +139,7 @@ if releaseId :
 formatVars = {
 	"variant" : os.environ["GAFFER_BUILD_VARIANT"],
 	"timestamp" : datetime.datetime.now().strftime( "%Y_%m_%d_%H%M" ),
+	"date" : datetime.datetime.now().strftime( "%Y_%m_%d" ),
 	"pullRequest" : pullRequest,
 	"shortCommit" : commit[:8],
 	"tag" : tag,
@@ -146,16 +149,17 @@ formatVars = {
 nameFormats = {
 	"default" : "gaffer-{timestamp}-{shortCommit}-{variant}",
 	"pull_request" : "gaffer-pr{pullRequest}-{branch}-{timestamp}-{shortCommit}-{variant}",
+	"nightly" : "gaffer-nightly-{date}-{shortCommit}-{variant}",
 	"release" : "gaffer-{tag}-{variant}"
 }
 
 trigger = os.environ.get( 'GITHUB_EVENT_NAME', '' )
 
-# If we have a releaseID (and tag) then we always use release naming convention
-# to allow manual re-runs of release builds that fail for <reasons>.
+# If we have a releaseID (and tag) then we always use release or nightly naming convention
+# to allow manual re-runs of builds that fail for <reasons>.
 if tag and releaseId :
-	print( "Have Release ID %s for tag %s, using release naming." % ( releaseId, tag ) )
-	trigger = "release"
+	trigger = "release" if tag != "nightly" else "nightly"
+	print( "Have Release ID %s for tag %s, using %s naming." % ( releaseId, tag, trigger ) )
 
 buildName = nameFormats.get( trigger, nameFormats['default'] ).format( **formatVars )
 
