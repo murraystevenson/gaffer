@@ -122,6 +122,11 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 				horizontalScrollMode = GafferUI.ScrollMode.Automatic
 			)
 
+			self.__pathListing.dragEnterSignal().connect( Gaffer.WeakMethod( self.__pathListingDragEnter ) )
+			self.__pathListing.dragMoveSignal().connect( Gaffer.WeakMethod( self.__pathListingDragMove ) )
+			self.__pathListing.dragLeaveSignal().connect( Gaffer.WeakMethod( self.__pathListingDragLeave ) )
+			self.__pathListing.dropSignal().connect( Gaffer.WeakMethod( self.__pathListingDrop ) )
+
 			self.__pathListing._qtWidget().header().setContextMenuPolicy( QtCore.Qt.CustomContextMenu )
 			self.__pathListing._qtWidget().header().customContextMenuRequested.connect( Gaffer.WeakMethod( self.__headerContextMenuRequested ) )
 			self.__pathListing._qtWidget().header().sectionPressed.connect( Gaffer.WeakMethod( self.__columnPressed ) )
@@ -189,6 +194,69 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 			columnName,
 			toolTip
 		)
+
+	def __columnAtHeaderPosition( self, position ) :
+
+		if position.y <= self.__pathListing._qtWidget().header().height() :
+			return self.__pathListing.columnAt( position )
+
+		return None
+
+	def __dropData( self, event ) :
+
+		optionData = GafferSceneUI.SceneInspector.draggedOptionData( event )
+		if isinstance( optionData, IECore.CompoundData ) :
+			return IECore.StringVectorData( optionData.keys() ) if len( optionData.keys() ) > 0 else None
+
+		return None
+
+	def __pathListingDragEnter( self, widget, event ) :
+
+		if not self.__currentSectionEditable() :
+			return False
+
+		column = self.__columnAtHeaderPosition( event.line.p0 )
+		if column is not None and self.__dropData( event ) is not None :
+			self.__dragEnterPointer = GafferUI.Pointer.getCurrent()
+			GafferUI.Pointer.setCurrent( "plus" )
+			return True
+
+		return False
+
+	def __pathListingDragMove( self, widget, event ) :
+
+		if not self.__currentSectionEditable() :
+			return False
+
+		column = self.__columnAtHeaderPosition( event.line.p0 )
+		if column is not None and self.__dropData( event ) is not None :
+			GafferUI.Pointer.setCurrent( "plus" )
+		else :
+			GafferUI.Pointer.setCurrent( self.__dragEnterPointer )
+
+		return True
+
+	def __pathListingDragLeave( self, widget, event ) :
+
+		if self.__currentSectionEditable() :
+			GafferUI.Pointer.setCurrent( self.__dragEnterPointer )
+
+		return True
+
+	def __pathListingDrop( self, widget, event ) :
+
+		if not self.__currentSectionEditable() :
+			return
+
+		GafferUI.Pointer.setCurrent( self.__dragEnterPointer )
+
+		optionNames = self.__dropData( event )
+		if optionNames is None :
+			return
+
+		columnIndex = self.__pathListing.getColumns().index( self.__pathListing.columnAt( event.line.p0 ) ) - len( self.__commonColumns )
+		for name in reversed( optionNames ) :
+			self.__favourite( "option:" + name, index = max( 0, columnIndex ) )
 
 	# Registers a column in the Render Pass Editor.
 	# `inspectorFunction` is a callable object of the form

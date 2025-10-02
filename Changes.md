@@ -6,7 +6,7 @@ Improvements
 
 - RenderPassEditor :
   - Added "Favourites" section. Columns from any other section can be marked for display in this section by right-clicking on their header and selecting "Favourite" from the menu. Columns can be reordered within the Favourites section by dragging their header.
-  - Any standard or renderer-specific option can be added as a favourite by clicking on the `+` column header and choosing it from the menu.
+  - Any standard or renderer-specific option can be added as a favourite by clicking on the `+` column header and choosing it from the menu, or any option can be added via drag & drop from the SceneInspector.
   - A default set of favourite columns can be configured by registering metadata containing a list of option names in a startup file. `Gaffer.Metadata.registerValue( GafferSceneUI.RenderPassEditor.Settings, "favouriteColumns", "userDefault", IECore.StringVectorData( [ "option:render:cameraInclusions", "option:render:matteInclusions" ] ) )`
 
 Fixes
