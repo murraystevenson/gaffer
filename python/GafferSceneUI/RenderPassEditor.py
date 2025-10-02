@@ -169,7 +169,7 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 	@classmethod
 	def __optionColumnCreator( cls, optionName, columnName = None ) :
 
-		optionLabel = Gaffer.Metadata.value( "option:" + optionName, "label" )
+		optionLabel = Gaffer.Metadata.value( "option:" + optionName, "columnLayout:label" ) or Gaffer.Metadata.value( "option:" + optionName, "label" )
 		if not columnName :
 			columnName = optionLabel or optionName.split( ":" )[-1]
 
