@@ -107,14 +107,16 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 
 			self.__renderPassNameColumn = _GafferSceneUI._RenderPassEditor.RenderPassNameColumn()
 			self.__renderPassActiveColumn = _GafferSceneUI._RenderPassEditor.RenderPassActiveColumn()
+			self.__commonColumns = [
+				self.__renderPassNameColumn,
+				self.__renderPassActiveColumn,
+			]
+
 			self.__pathListing = GafferUI.PathListingWidget(
 				_GafferSceneUI._RenderPassEditor.RenderPassPath(
 					self.settings()["__filteredIn"], self.context(), "/", grouped = self.settings()["displayGrouped"].getValue()
 				),
-				columns = [
-					self.__renderPassNameColumn,
-					self.__renderPassActiveColumn,
-				],
+				columns = self.__commonColumns,
 				selectionMode = GafferUI.PathListingWidget.SelectionMode.Cells,
 				displayMode = GafferUI.PathListingWidget.DisplayMode.Tree,
 				horizontalScrollMode = GafferUI.ScrollMode.Automatic
@@ -122,6 +124,7 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 
 			self.__pathListing._qtWidget().header().setContextMenuPolicy( QtCore.Qt.CustomContextMenu )
 			self.__pathListing._qtWidget().header().customContextMenuRequested.connect( Gaffer.WeakMethod( self.__headerContextMenuRequested ) )
+			self.__pathListing._qtWidget().header().sectionMoved.connect( Gaffer.WeakMethod( self.__columnMoved ) )
 
 			with GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Horizontal, spacing = 4 ) :
 
@@ -148,6 +151,7 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 			GafferSceneUI.Private.InspectorColumn.connectToDragBeginSignal( self.__pathListing )
 
 		self.__columnCache = {}
+		self.__ignoreColumnMoved = False
 
 		self._updateFromSet()
 		self.__updateColumns()
@@ -316,7 +320,8 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 					section = sections.get( currentSection or None, {} )
 					sectionColumns += [ ( self.__acquireColumn( c, currentSection ), index ) for ( c, index ) in section.values() ]
 
-		self.__pathListing.setColumns( [ self.__renderPassNameColumn, self.__renderPassActiveColumn ] + self.__orderedColumns( sectionColumns ) )
+		self.__pathListing.setColumns( self.__commonColumns + self.__orderedColumns( sectionColumns ) )
+		self.__pathListing._qtWidget().header().setSectionsMovable( currentSection == "Favourites" )
 
 	def __acquireColumn( self, columnCreator, section ) :
 
@@ -423,6 +428,30 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 		if m.size() :
 			self.__contextMenu = GafferUI.Menu( m )
 			self.__contextMenu.popup( parent = self )
+
+	def __resetColumnOrder( self ) :
+
+		self.__ignoreColumnMoved = True
+
+		header = self.__pathListing._qtWidget().header()
+		for x in range( header.count() ) :
+			visualIndex = header.visualIndex( x )
+			if visualIndex != x :
+				header.moveSection( visualIndex, x )
+
+		self.__ignoreColumnMoved = False
+
+	def __columnMoved( self, logicalIndex, oldVisualIndex, newVisualIndex ) :
+
+		if self.__ignoreColumnMoved :
+			return
+
+		firstMovableIndex = len( self.__commonColumns )
+		favourites = list( self.settings()["favouriteColumns"].getValue() )
+		favourites.insert( max( 0, newVisualIndex - firstMovableIndex ), favourites.pop( oldVisualIndex - firstMovableIndex ) )
+
+		self.settings()["favouriteColumns"].setValue( IECore.StringVectorData( favourites ) )
+		self.__resetColumnOrder()
 
 	def __displayGroupedChanged( self ) :
 
