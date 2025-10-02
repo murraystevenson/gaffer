@@ -124,6 +124,7 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 
 			self.__pathListing._qtWidget().header().setContextMenuPolicy( QtCore.Qt.CustomContextMenu )
 			self.__pathListing._qtWidget().header().customContextMenuRequested.connect( Gaffer.WeakMethod( self.__headerContextMenuRequested ) )
+			self.__pathListing._qtWidget().header().sectionPressed.connect( Gaffer.WeakMethod( self.__columnPressed ) )
 			self.__pathListing._qtWidget().header().sectionMoved.connect( Gaffer.WeakMethod( self.__columnMoved ) )
 
 			with GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Horizontal, spacing = 4 ) :
@@ -314,6 +315,10 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 				# Include a blank spacer column when there are no favourites.
 				sectionColumns.append( ( GafferUI.StandardPathColumn( "", "", GafferUI.PathColumn.SizeMode.Stretch ), 0 ) )
 
+			sectionColumns.append( ( _AdderColumn(), -1 ) )
+			# We don't want our _AdderColumn to automatically stretch,
+			# so stretch the second-to-last column instead.
+			sectionColumns[-2][0].setSizeMode( GafferUI.PathColumn.SizeMode.Stretch )
 		else :
 			for groupKey, sections in self.__columnRegistry.items() :
 				if IECore.StringAlgo.match( tabGroup, groupKey ) :
@@ -383,9 +388,33 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 
 		return self.settings()["section"].getValue() == "Favourites"
 
+	def __showOptionMenu( self ) :
+
+		m = IECore.MenuDefinition()
+
+		favourites = self.settings()["favouriteColumns"].getValue()
+		for option in Gaffer.Metadata.targetsWithMetadata( "option:*", "defaultValue" ) :
+			category = Gaffer.Metadata.value( option, "category" ) or "Other"
+			section = ( Gaffer.Metadata.value( option, "layout:section" ) or "Other" ).replace( ".", "/" )
+			label = Gaffer.Metadata.value( option, "label" ) or option[7:]
+			m.append(
+				f"/{category}/{section}/{label}",
+				{
+					"command" : functools.partial( Gaffer.WeakMethod( self.__favourite ), option ),
+					"active" : option not in favourites,
+				}
+			)
+
+		self.__contextMenu = GafferUI.Menu( m )
+		self.__contextMenu.popup( parent = self )
+
 	def __headerContextMenuRequested( self, pos ) :
 
 		column = self.__pathListing.columnAt( imath.V2f( pos.x(), pos.y() ) )
+		if isinstance( column, _AdderColumn ) :
+			self.__showOptionMenu()
+			return
+
 		m = IECore.MenuDefinition()
 		userEditableSection = self.__currentSectionEditable()
 		if isinstance( column, GafferSceneUI.Private.InspectorColumn ) :
@@ -448,10 +477,19 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 
 		firstMovableIndex = len( self.__commonColumns )
 		favourites = list( self.settings()["favouriteColumns"].getValue() )
-		favourites.insert( max( 0, newVisualIndex - firstMovableIndex ), favourites.pop( oldVisualIndex - firstMovableIndex ) )
+		if len( favourites ) > oldVisualIndex - firstMovableIndex :
+			favourites.insert( max( 0, newVisualIndex - firstMovableIndex ), favourites.pop( oldVisualIndex - firstMovableIndex ) )
 
 		self.settings()["favouriteColumns"].setValue( IECore.StringVectorData( favourites ) )
 		self.__resetColumnOrder()
+
+	def __columnPressed( self, logicalIndex ) :
+
+		if isinstance( self.__pathListing.getColumns()[logicalIndex], _AdderColumn ) :
+			self.__showOptionMenu()
+			return True
+
+		return False
 
 	def __displayGroupedChanged( self ) :
 
@@ -852,6 +890,20 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 		self.__addButton.setToolTip( "Click to add render pass." if editable else "To add a render pass, first choose an editable Edit Scope." )
 
 GafferUI.Editor.registerType( "RenderPassEditor", RenderPassEditor )
+
+class _AdderColumn( GafferUI.PathColumn ) :
+
+	def __init__( self ) :
+
+		GafferUI.PathColumn.__init__( self )
+
+	def cellData( self, path, canceller ) :
+
+		return GafferUI.PathColumn.CellData( value = "", toolTip = "Click on the header to add columns." )
+
+	def headerData( self, canceller ) :
+
+		return GafferUI.PathColumn.CellData( value = "", icon = "plus.png", toolTip = "Click to add columns." )
 
 ##########################################################################
 # Metadata controlling the settings UI
