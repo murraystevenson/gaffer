@@ -123,14 +123,18 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 			)
 
 			self.__pathListing.dragEnterSignal().connect( Gaffer.WeakMethod( self.__pathListingDragEnter ) )
-			self.__pathListing.dragMoveSignal().connect( Gaffer.WeakMethod( self.__pathListingDragMove ) )
+			# We connect at front to ensure we can disable the header highlight when moving from the
+			# header to a column cell.
+			## \todo Should this instead be handled by PathColumn considering the header in its drag handling?
+			self.__pathListing.dragMoveSignal().connectFront( Gaffer.WeakMethod( self.__pathListingDragMove ) )
 			self.__pathListing.dragLeaveSignal().connect( Gaffer.WeakMethod( self.__pathListingDragLeave ) )
 			self.__pathListing.dropSignal().connect( Gaffer.WeakMethod( self.__pathListingDrop ) )
 
 			self.__pathListing._qtWidget().header().setContextMenuPolicy( QtCore.Qt.CustomContextMenu )
 			self.__pathListing._qtWidget().header().customContextMenuRequested.connect( Gaffer.WeakMethod( self.__headerContextMenuRequested ) )
-			self.__pathListing._qtWidget().header().sectionPressed.connect( Gaffer.WeakMethod( self.__columnPressed ) )
+			self.__pathListing._qtWidget().header().blockingSectionPressedSignal().connect( Gaffer.WeakMethod( self.__columnPressed ) )
 			self.__pathListing._qtWidget().header().sectionMoved.connect( Gaffer.WeakMethod( self.__columnMoved ) )
+			self.__pathListing._qtWidget().header().setFirstMovableSection( len( self.__commonColumns ) )
 
 			with GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Horizontal, spacing = 4 ) :
 
@@ -217,6 +221,7 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 
 		column = self.__columnAtHeaderPosition( event.line.p0 )
 		if column is not None and self.__dropData( event ) is not None :
+			self.__pathListing._qtWidget().header().setHighlightedSectionDivider( max( len( self.__commonColumns ), self.__pathListing.getColumns().index( column ) ) )
 			self.__dragEnterPointer = GafferUI.Pointer.getCurrent()
 			GafferUI.Pointer.setCurrent( "plus" )
 			return True
@@ -230,15 +235,21 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 
 		column = self.__columnAtHeaderPosition( event.line.p0 )
 		if column is not None and self.__dropData( event ) is not None :
+			self.__pathListing._qtWidget().header().setHighlightedSectionDivider( max( len( self.__commonColumns ), self.__pathListing.getColumns().index( column ) ) )
 			GafferUI.Pointer.setCurrent( "plus" )
 		else :
+			self.__pathListing._qtWidget().header().setHighlightedSectionDivider( None )
 			GafferUI.Pointer.setCurrent( self.__dragEnterPointer )
 
-		return True
+		# We always return False to give cells the opportunity to respond when a drag is moved from
+		# a column cell to a header.
+		## \todo Should this instead be handled by PathColumn considering the header in its drag handling?
+		return False
 
 	def __pathListingDragLeave( self, widget, event ) :
 
 		if self.__currentSectionEditable() :
+			self.__pathListing._qtWidget().header().setHighlightedSectionDivider( None )
 			GafferUI.Pointer.setCurrent( self.__dragEnterPointer )
 
 		return True
@@ -248,6 +259,7 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 		if not self.__currentSectionEditable() :
 			return
 
+		self.__pathListing._qtWidget().header().setHighlightedSectionDivider( None )
 		GafferUI.Pointer.setCurrent( self.__dragEnterPointer )
 
 		optionNames = self.__dropData( event )
@@ -971,7 +983,7 @@ class _AdderColumn( GafferUI.PathColumn ) :
 
 	def headerData( self, canceller ) :
 
-		return GafferUI.PathColumn.CellData( value = "", icon = "plus.png", toolTip = "Click to add columns." )
+		return GafferUI.PathColumn.CellData( value = "", icon = IECore.CompoundData( { "state:normal" : "plus.png", "state:highlighted" : "plusHighlighted.png" } ), toolTip = "Click to add columns." )
 
 ##########################################################################
 # Metadata controlling the settings UI
