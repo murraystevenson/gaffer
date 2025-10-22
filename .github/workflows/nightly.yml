@@ -51,6 +51,14 @@ jobs:
           fi
         done
 
+        # The "pendingNightly" tag specifies the commit used to build the current nightly.
+        # The "nightly" tag will be updated to match "pendingNightly" once the builds
+        # have completed.
+        git config user.name "${GITHUB_ACTOR}"
+        git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+        git tag -fa pendingNightly -m "pending nightly build"
+        git push --force origin refs/tags/pendingNightly
+
         echo GAFFER_NIGHTLY=1 >> $GITHUB_OUTPUT
       shell: bash
       env:
@@ -79,13 +87,14 @@ jobs:
         fetch-depth: 0
 
     - name: Update Nightly Tag
-      # After a successful build, move the "nightly" tag to HEAD so the tag
-      # represents the commit from which the latest nightly was built. This
-      # keeps the GitHub release up to date and allows us to avoid building
-      # a new nightly from the same commit.
+      # After a successful build, move the "nightly" tag to the commit tagged
+      # "pendingNightly" so the "nightly" tag represents the commit from which
+      # the latest nightly was built. This keeps the GitHub release up to date
+      # and allows us to avoid building a new nightly from the same commit.
       run: |
         git config user.name "${GITHUB_ACTOR}"
         git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-        git tag -fa nightly -m "nightly build"
-        git push --force origin nightly
+        git tag -fa nightly refs/tags/pendingNightly^{} -m "nightly build"
+        git push --force origin refs/tags/nightly
+        git push --delete origin refs/tags/pendingNightly
       shell: bash
