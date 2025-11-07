@@ -1,6 +1,6 @@
 ##########################################################################
 #
-#  Copyright (c) 2024, Cinesite VFX Ltd. All rights reserved.
+#  Copyright (c) 2025, Cinesite VFX Ltd. All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
 #        disclaimer in the documentation and/or other materials provided with
 #        the distribution.
 #
-#      * Neither the name of Cinesite VFX Ltd. nor the names of
+#      * Neither the name of John Haddon nor the names of
 #        any other contributors to this software may be used to endorse or
 #        promote products derived from this software without specific prior
 #        written permission.
@@ -34,37 +34,43 @@
 #
 ##########################################################################
 
+import os
 import sys
 import functools
 
 import IECore
+import Gaffer
 import GafferScene
 
-# Register functions to load renderers on demand. This allows us to find a renderer
+# Register function to load renderer on demand. This allows us to find the renderer
 # even if the relevant Python module hasn't been imported (in `gaffer execute` for instance).
 
 def __creator( renderType, fileName, messageHandler, renderer, module ) :
 
- 	# Import module to replace ourselves with the true renderer creation function.
+	# Import module to replace ourselves with the true renderer creation function.
 	__import__( module )
 	# And then call `create()` again to use it.
 	return GafferScene.Private.IECoreScenePreview.Renderer.create( renderer, renderType, fileName, messageHandler )
 
-for renderer, module in [
-	( "Cycles", "GafferCycles" ),
-	( "Arnold", "IECoreArnold" ),
-	( "3Delight", "IECoreDelight" ),
-	( "3Delight Cloud", "IECoreDelight" ),
-	( "RenderMan", "IECoreRenderMan" ),
-] :
-	if renderer in GafferScene.Private.IECoreScenePreview.Renderer.types() :
-		# Already registered
-		continue
-	if not IECore.SearchPath( sys.path ).find( module ) :
-		# Renderer not available
-		continue
+for renderer in [ "3Delight", "3Delight Cloud" ] :
 
-	# Register creator that will load module to provide renderer on demand.
-	GafferScene.Private.IECoreScenePreview.Renderer.registerType(
-		renderer, functools.partial( __creator, renderer = renderer, module = module )
-	)
+	if "DELIGHT" in os.environ and IECore.SearchPath( sys.path ).find( "IECoreDelight" ) :
+
+		if renderer not in GafferScene.Private.IECoreScenePreview.Renderer.types() :
+			# Register creator that will load the IECoreDelight module to provide renderer on demand.
+			GafferScene.Private.IECoreScenePreview.Renderer.registerType(
+				renderer, functools.partial( __creator, renderer = renderer, module = "IECoreDelight" )
+			)
+
+		Gaffer.Metadata.registerValue( f"renderer:{renderer}", "enabled", True )
+
+	Gaffer.Metadata.registerValues( {
+
+		f"renderer:{renderer}" : {
+
+			"optionPrefix" : "dl",
+			"attributePrefix" : "dl",
+
+		},
+
+	} )
