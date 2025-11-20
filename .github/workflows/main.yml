@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '*_maintenance'
+      - 'reportDiskSpace'
   pull_request:
     branches:
       - '*'
@@ -12,6 +13,13 @@ on:
       types: [published]
 
 jobs:
+
+  ubuntu-report:
+
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          df -h
 
   build:
 
@@ -104,6 +112,12 @@ jobs:
 
     steps:
 
+    - name: Report free disk space 1
+      run: |
+        df -h
+        du -h --max-depth=2 $GITHUB_WORKSPACE
+      if: runner.os == 'Linux'
+
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
     - name: Install Windows SDK
@@ -158,6 +172,12 @@ jobs:
        GAFFER_BUILD_VARIANT: ${{ matrix.name }}
       shell: bash
 
+    - name: Report free disk space 2
+      run: |
+        df -h
+        du -h --max-depth=2 $GITHUB_WORKSPACE
+      if: runner.os == 'Linux'
+
     - name: Install dependencies
       # The `$GITHUB_ENV` shenanigans creates an environment variable
       # containing the hash of the archive, for use in the cache key
@@ -169,6 +189,12 @@ jobs:
         ./.github/workflows/main/installONNX.py
         echo ONNX_ROOT=$GITHUB_WORKSPACE/onnxruntime >> $GITHUB_ENV
       shell: bash
+
+    - name: Report free disk space 3
+      run: |
+        df -h
+        du -h --max-depth=2 $GITHUB_WORKSPACE
+      if: runner.os == 'Linux'
 
     - name: Install Mesa (Windows)
       # Installed after dependencies to avoid errors from python related to existing directory `bin`.
@@ -190,11 +216,23 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-${{ matrix.containerImage }}-${{env.GAFFER_DEPENDENCIES_HASH}}-${{ matrix.buildType }}-
 
+    - name: Report free disk space 4
+      run: |
+        df -h
+        du -h --max-depth=2 $GITHUB_WORKSPACE
+      if: runner.os == 'Linux'
+
     - name: Build Gaffer
       run: |
        scons -j ${{ matrix.jobs }} build BUILD_TYPE=${{ matrix.buildType }} OPTIONS=.github/workflows/main/sconsOptions
       env:
         PYTHONUTF8: 1
+
+    - name: Report free disk space 5
+      run: |
+        df -h
+        du -h --max-depth=2 $GITHUB_WORKSPACE
+      if: runner.os == 'Linux'
 
     - name: Test
       # Tests should complete in well under an hour. If they don't it's most likely because
@@ -205,6 +243,12 @@ jobs:
         echo "::add-matcher::./.github/workflows/main/problemMatchers/unittest.json"
         ${{ matrix.testRunner }} ${{ env.GAFFER_BUILD_DIR }}/bin/gaffer test ${{ matrix.testArguments }}
         echo "::remove-matcher owner=unittest::"
+
+    - name: Report free disk space 6
+      run: |
+        df -h
+        du -h --max-depth=2 $GITHUB_WORKSPACE
+      if: runner.os == 'Linux'
 
     - name: Build and test Arnold extension
       run: |
@@ -301,6 +345,12 @@ jobs:
         df -H
       if: ${{ env.RMANTREE != '' && runner.os != 'Windows' && matrix.name != 'linux-gcc11-platform23' }}
 
+    - name: Report free disk space 7
+      run: |
+        df -h
+        du -h --max-depth=2 $GITHUB_WORKSPACE
+      if: runner.os == 'Linux'
+
     - name: Build Docs and Package
       # Docs builds should be relatively quick. If there is a problem, this
       # aborts them in a more timely fashion than the default 6hr timeout.
@@ -313,6 +363,12 @@ jobs:
       env:
         PYTHONUTF8: 1
       if: matrix.publish
+
+    - name: Report free disk space 8
+      run: |
+        df -h
+        du -h --max-depth=2 $GITHUB_WORKSPACE
+      if: runner.os == 'Linux'
 
     - name: Validate
       run: |
