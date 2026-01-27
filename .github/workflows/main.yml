@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '*_maintenance'
+      - 'tbb2021StackSizeDebug'
   pull_request:
     branches:
       - '*'
@@ -36,6 +37,7 @@ jobs:
           linux-debug-gcc11,
           linux-gcc11-platform24,
           windows,
+          windows-platform24,
         ]
 
         include:
@@ -87,6 +89,16 @@ jobs:
             testArguments: -excludedCategories performance
             sconsCacheMegabytes: 800
             jobs: 4
+
+          - name: windows-platform24
+            os: windows-2022
+            buildType: RELEASE
+            publish: true
+            containerImage:
+            testArguments: -excludedCategories performance
+            sconsCacheMegabytes: 800
+            jobs: 4
+            dependenciesURL: https://github.com/ImageEngine/cortex/releases/download/10.7.0.0a3/cortex-10.7.0.0a3-windows.zip
 
     runs-on: ${{ matrix.os }}
 
