@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '*_maintenance'
+      - 'tbbStackSizeDebug'
   pull_request:
     branches:
       - '*'
@@ -203,7 +204,7 @@ jobs:
       timeout-minutes: 60
       run: |
         echo "::add-matcher::./.github/workflows/main/problemMatchers/unittest.json"
-        ${{ matrix.testRunner }} ${{ env.GAFFER_BUILD_DIR }}/bin/gaffer test ${{ matrix.testArguments }}
+        ${{ matrix.testRunner }} ${{ env.GAFFER_BUILD_DIR }}/bin/gaffer test GafferTest.LRUCacheTest.testRecursionTaskParallel
         echo "::remove-matcher owner=unittest::"
 
     - name: Build and test Arnold extension

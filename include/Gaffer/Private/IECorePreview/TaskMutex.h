@@ -45,6 +45,7 @@
 
 #include "tbb/task_arena.h"
 #include "tbb/task_group.h"
+#include "tbb/global_control.h"
 
 #include <iostream>
 #include <optional>
@@ -175,6 +176,13 @@ class TaskMutex : boost::noncopyable
 					// bug in `tbb::task_group_context::reset()`.
 					std::exception_ptr exception;
 					auto fWrapper = [&f, &exception] {
+						// pthread_attr_t attr;
+						// size_t stacksize;
+						// if( !pthread_attr_init(&attr) && !pthread_attr_getstacksize(&attr, &stacksize) )
+						// {
+						// 	printf( "default stacksize for a new thread: %ld\n", stacksize );
+						// }
+						std::cout << tbb::global_control::active_value( tbb::global_control::thread_stack_size ) << std::endl;
 						try
 						{
 							f();
