@@ -149,6 +149,7 @@ class Application( IECore.Parameterised ) :
 			import resource
 			threadStackSize = max( resource.getrlimit( resource.RLIMIT_STACK )[0], threadStackSize )
 
+		IECore.msg( IECore.Msg.Level.Warning, "Application", f"Setting TBB thread_stack_size to {threadStackSize}" )
 		with (
 			IECore.tbb_global_control(
 				IECore.tbb_global_control.parameter.max_allowed_parallelism,
