@@ -102,9 +102,16 @@ else
 	prependToPath "$rootDir/lib" DYLD_FRAMEWORK_PATH
 fi
 
-# Unset PYTHONHOME to make sure our internal Python build is used in
-# preference to anything in the external environment.
-unset PYTHONHOME
+if [[ `uname` = "Darwin" ]] ; then
+	# macOS requires PYTHONHOME set to our internal Python build. We
+	# run Python from a symlink in $rootDir/bin and changes in Python 3.11
+	# cause discovery to be based on the symlink location.
+	export PYTHONHOME="$rootDir/lib/Python.framework/Versions/Current"
+else
+	# Unset PYTHONHOME to make sure our internal Python build is used in
+	# preference to anything in the external environment.
+	unset PYTHONHOME
+fi
 
 # Run `_gaffer.py` to set up the environment and launch Gaffer
 # ============================================================
