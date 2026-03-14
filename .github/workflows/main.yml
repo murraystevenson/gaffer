@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '*_maintenance'
+      - 'macCI'
   pull_request:
     branches:
       - '*'
