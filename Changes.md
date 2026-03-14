@@ -38,6 +38,7 @@ Fixes
 - Cycles :
   - Reduced memory usage when rendering a single segment of deformation blur on CPU devices.
   - Fixed PointsPrimitive motion blur when rendering with even numbers of segments.
+- Gaffer module : Fixed bug preventing `environment()` from returning environment variables modified after startup on macOS.
 
 API
 ---
