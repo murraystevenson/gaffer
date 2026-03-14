@@ -2022,6 +2022,7 @@ exeEnv = env.Clone()
 
 # Piggy-back on some of `baseLibEnv` variables.
 exeEnv["PYTHON_ABI_VERSION"] = baseLibEnv["PYTHON_ABI_VERSION"]
+exeEnv["PYTHON_VERSION"] = baseLibEnv["PYTHON_VERSION"]
 
 exeEnv.Append(
 
@@ -2034,7 +2035,7 @@ exeEnv.Append(
 
 )
 
-if exeEnv["PLATFORM"] != "win32" :
+if os.path.basename( exeEnv["CXX"] ) == "g++" :
 	exeEnv["LINKFLAGS"].remove( "-Wl,--as-needed" )
 	exeEnv.Append(
 
@@ -2046,8 +2047,9 @@ if exeEnv["PLATFORM"] != "win32" :
 		],
 
 	)
-else :
-	exeEnv.Append( 
+
+if exeEnv["PLATFORM"] == "win32" :
+	exeEnv.Append(
 
 		# Using 4MB stack to match TBB's default thread stack size.
 		# We read this value in `Application`, so it can be changed
