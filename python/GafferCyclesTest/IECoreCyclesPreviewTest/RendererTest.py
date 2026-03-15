@@ -811,6 +811,7 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.option( "camera", IECore.StringData( "testCamera" ) )
+		renderer.option( "cycles:session:samples", IECore.IntData( 16 ) )
 		renderer.render()
 		del renderer
 
@@ -845,6 +846,7 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.option( "camera", IECore.StringData( "testCamera" ) )
+		renderer.option( "cycles:session:samples", IECore.IntData( 16 ) )
 		renderer.render()
 		del renderer
 
