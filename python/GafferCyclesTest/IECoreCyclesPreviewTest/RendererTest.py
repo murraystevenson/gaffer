@@ -262,6 +262,7 @@ class RendererTest( GafferTest.TestCase ) :
 		self.assertEqual( testPixel.b, 0 )
 
 		del plane, redLight, greenLight
+		del renderer
 
 	def testLightWithoutAttribute( self ) :
 
@@ -845,6 +846,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 		renderer.option( "camera", IECore.StringData( "testCamera" ) )
 		renderer.render()
+		del renderer
 
 		image = IECoreImage.ImageReader( str( fileName ) ).read()
 		self.assertEqual( image.dataWindow, imath.Box2i( imath.V2i( 500, 250 ), imath.V2i( 1499, 749 ) ) )
@@ -1517,6 +1519,7 @@ class RendererTest( GafferTest.TestCase ) :
 			cyclesPlane.transform( imath.M44f().translate( imath.V3f( translateX, 0, -1 ) ) )
 
 		renderer.render()
+		del renderer
 
 		image = OpenImageIO.ImageBuf( str( fileName ) )
 		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.48, 0.5 ) ), imath.Color4f( 1, 0, 0, 1 ) )
