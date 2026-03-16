@@ -1077,6 +1077,7 @@ class RendererTest( GafferTest.TestCase ) :
 		primitiveHandle.transform( imath.M44f().translate( imath.V3f( 0, 0, -1 ) ) )
 
 		renderer.render()
+		del renderer
 
 		# Check we got what we expected
 
