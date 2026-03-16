@@ -248,7 +248,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 		# Render, and check that we have a pure red image. If green has crept in,
 		# then we know the light linking was broken.
-
+		renderer.option( "cycles:session:samples", IECore.IntData( 32 ) )
 		renderer.render()
 		time.sleep( 1 )
 
@@ -1528,7 +1528,9 @@ class RendererTest( GafferTest.TestCase ) :
 			)
 			cyclesPlane.transform( imath.M44f().translate( imath.V3f( translateX, 0, -1 ) ) )
 
+		renderer.option( "cycles:session:samples", IECore.IntData( 32 ) )
 		renderer.render()
+		time.sleep( 1 )
 		del renderer
 
 		image = OpenImageIO.ImageBuf( str( fileName ) )
