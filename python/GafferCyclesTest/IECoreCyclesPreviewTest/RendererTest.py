@@ -840,10 +840,18 @@ class RendererTest( GafferTest.TestCase ) :
 
 		renderer.option( "camera", IECore.StringData( "testCamera" ) )
 		renderer.render()
+		del renderer
 
-		image = IECoreImage.ImageReader( str( fileName ) ).read()
-		self.assertEqual( image.dataWindow, imath.Box2i( imath.V2i( 500, 250 ), imath.V2i( 1499, 749 ) ) )
-		self.assertEqual( image.displayWindow, imath.Box2i( imath.V2i( 0 ), imath.V2i( 1999, 999 ) ) )
+		def roiAsBox( r ) :
+			return imath.Box2i( imath.V2i( r.xbegin, r.ybegin ), imath.V2i( r.xend - 1, r.yend - 1 ) )
+
+		image = OpenImageIO.ImageInput.open( str( fileName ) )
+		dataWindow = roiAsBox( image.spec().roi )
+		displayWindow = roiAsBox( image.spec().roi_full )
+		image.close()
+
+		self.assertEqual( dataWindow, imath.Box2i( imath.V2i( 500, 250 ), imath.V2i( 1499, 749 ) ) )
+		self.assertEqual( displayWindow, imath.Box2i( imath.V2i( 0 ), imath.V2i( 1999, 999 ) ) )
 
 	def testPointsWithNormals( self ) :
 
