@@ -259,19 +259,25 @@ class RendererTest( GafferTest.TestCase ) :
 		# Render, and check that we have a pure red image. If green has crept in,
 		# then we know the light linking was broken.
 
+		print( "PRE RENDER", flush = True )
+		t = time.time()
 		renderer.render()
-		time.sleep( 1 )
+		time.sleep( 10 )
+		print( "POST RENDER", time.time() - t, flush = True )
 
 		image = IECoreImage.ImageDisplayDriver.storedImage( "testRecycleLightGroups" )
 		self.assertTrue( isinstance( image, IECoreImage.ImagePrimitive ) )
-
+		print( "POST READ", flush = True )
 		# Slightly off-centre, to avoid triangle edge artifact in centre of image.
 		testPixel = self.__colorAtUV( image, imath.V2f( 0.55 ) )
+		print( "PRE TEST", flush = True )
 		self.assertGreater( testPixel.r, 0 )
 		self.assertEqual( testPixel.g, 0 )
 		self.assertEqual( testPixel.b, 0 )
+		print( "POST TEST", flush = True )
 
 		del plane, redLight, greenLight
+		print( "POST DEL", flush = True )
 
 	def testLightWithoutAttribute( self ) :
 
@@ -1523,6 +1529,7 @@ class RendererTest( GafferTest.TestCase ) :
 			cyclesPlane.transform( imath.M44f().translate( imath.V3f( translateX, 0, -1 ) ) )
 
 		renderer.render()
+		del renderer
 
 		image = OpenImageIO.ImageBuf( str( fileName ) )
 		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.48, 0.5 ) ), imath.Color4f( 1, 0, 0, 1 ) )
@@ -2858,7 +2865,7 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.render()
-		time.sleep( 1 )
+		time.sleep( 10 )
 
 		image = IECoreImage.ImageDisplayDriver.storedImage( "testVDB" )
 		self.assertIsInstance( image, IECoreImage.ImagePrimitive )
@@ -2874,7 +2881,7 @@ class RendererTest( GafferTest.TestCase ) :
 			renderer.option( "cycles:integrator:volume_ray_marching", IECore.BoolData( rayMarching ) )
 
 			renderer.render()
-			time.sleep( 1 )
+			time.sleep( 10 )
 
 			image = IECoreImage.ImageDisplayDriver.storedImage( "testVDB" )
 			self.assertIsInstance( image, IECoreImage.ImagePrimitive )
@@ -2947,7 +2954,7 @@ class RendererTest( GafferTest.TestCase ) :
 		volume2.transform( imath.M44f().translate( imath.V3f( 50, 0, 0 ) ) )
 
 		renderer.render()
-		time.sleep( 4 )
+		time.sleep( 10 )
 
 		image = IECoreImage.ImageDisplayDriver.storedImage( "testVDB" )
 		self.assertIsInstance( image, IECoreImage.ImagePrimitive )
@@ -2973,7 +2980,7 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.render()
-		time.sleep( 4 )
+		time.sleep( 10 )
 
 		image = IECoreImage.ImageDisplayDriver.storedImage( "testVDB" )
 		self.assertIsInstance( image, IECoreImage.ImagePrimitive )
