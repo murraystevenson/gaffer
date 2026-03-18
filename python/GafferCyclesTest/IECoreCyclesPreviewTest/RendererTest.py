@@ -54,9 +54,22 @@ import GafferTest
 
 class RendererTest( GafferTest.TestCase ) :
 
+	@staticmethod
+	def createRenderer( rendererType = GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Batch ) :
+
+		__options = {
+			"cycles:session:samples" : IECore.IntData( 16 ),
+		}
+
+		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles", rendererType )
+		for name, value in __options.items() :
+			renderer.option( name, value )
+
+		return renderer
+
 	def testObjectColor( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.output(
 			"testOutput",
@@ -107,7 +120,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testQuadLightColorTexture( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.output(
 			"testOutput",
@@ -175,10 +188,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testRecycleLightGroups( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		renderer.output(
 			"testOutput",
@@ -265,7 +275,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testLightWithoutAttribute( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		# Light destined for another renderer - we want to ignore this, and not crash.
 
@@ -285,7 +295,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testBackgroundLightWithoutTexture( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.output(
 			"testOutput",
@@ -350,7 +360,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testCrashWhenNoBackgroundLight( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.option( "cycles:shadingsystem", IECore.StringData( "SVM" ) )
 
@@ -372,7 +382,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testBackgroundLightBatchRender( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		fileName = self.temporaryDirectory() / "test.exr"
 		renderer.output(
@@ -433,10 +443,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testBackgroundLightEdits( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		renderer.output(
 			"testOutput",
@@ -541,10 +548,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testBackgroundShader( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		renderer.output(
 			"testOutput",
@@ -659,7 +663,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testMultipleOutputs( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.output(
 			"testOutput:beauty",
@@ -697,10 +701,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testCommand( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		# Unknown commands that claim to be for Cycles should emit a warning.
 
@@ -731,10 +732,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testUnconvertibleObject( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		# We don't expect renderers other than OpenGL to have any support
 		# for the Placeholder object. Here we're just checking that the Cycles
@@ -766,10 +764,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testCameraAttributeEdits( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		camera = renderer.camera( "test", IECoreScene.Camera() )
 
@@ -782,7 +777,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testDisplayDriverCropWindow( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.camera(
 			"testCamera",
@@ -820,7 +815,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testOutputFileCropWindow( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.camera(
 			"testCamera",
@@ -852,7 +847,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testPointsWithNormals( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.output(
 			"pointsWithNormals",
@@ -915,7 +910,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def __testMeshSmoothing( self, cube, smoothingExpected ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.output(
 			"meshSmoothing",
@@ -991,7 +986,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testUnsupportedPrimitiveVariables( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 		attributes = renderer.attributes( IECore.CompoundObject() )
 
 		primitive = IECoreScene.PointsPrimitive( IECore.V3fVectorData( [ imath.V3f( 0 ) ] ) )
@@ -1022,7 +1017,10 @@ class RendererTest( GafferTest.TestCase ) :
 
 		attributeName = primitiveVariable if attributeName is None else attributeName
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
+
+		if isinstance( primitive, IECoreScene.CurvesPrimitive ) :
+			renderer.option( "cycles:session:samples", IECore.IntData( 512 ) )
 
 		# Frame the primitive so it fills the entire image.
 
@@ -1461,7 +1459,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testShaderSubstitutions( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		fileName = self.temporaryDirectory() / "test.exr"
 		renderer.output(
@@ -1545,7 +1543,8 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def __testCustomAttributeType( self, primitive, prefix, customAttribute, outputPlug, data, expectedResult, maxDifference = 0.0 ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
+		renderer.option( "cycles:session:samples", IECore.IntData( 32 ) )
 
 		# Frame the primitive so it fills the entire image.
 
@@ -1623,7 +1622,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testCustomAttributePrecedence( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.output(
 			"testOutput",
@@ -1672,10 +1671,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testMissingOSLShader( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		with IECore.CapturingMessageHandler() as mh :
 
@@ -1693,10 +1689,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testMissingCyclesShader( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		with IECore.CapturingMessageHandler() as mh :
 
@@ -1714,7 +1707,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testMissingShaderParameter( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		with IECore.CapturingMessageHandler() as mh :
 			dodgyNetwork = IECoreScene.ShaderNetwork(
@@ -1735,7 +1728,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testOSLComponentConnections( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.output(
 			"testOutput",
@@ -1783,7 +1776,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testSurfaceAttributeWithGenericShaderType( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.output(
 			"testOutput",
@@ -1842,7 +1835,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testCustomAOV( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		# Custom AOVs are currently not supported in OSL mode.
 		# See https://developer.blender.org/T73266 for further updates
@@ -1933,7 +1926,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def __testShaderResults( self, shader, expectedResults, maxDifference = 0.0 ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		# Frame so our plane fills the entire image.
 
@@ -2145,7 +2138,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testInvalidShaderParameterValues( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		for name, value in {
 			"sheen_weight" : IECore.StringData( "iShouldBeAFloat" ),
@@ -2179,7 +2172,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testInvalidShaderEnumValue( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		with IECore.CapturingMessageHandler() as mh :
 
@@ -2204,7 +2197,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testUSDLightColorTemperature( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.output(
 			"testOutput",
@@ -2269,7 +2262,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testOSLInSVMShadingSystem( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.option( "cycles:shadingsystem", IECore.StringData( "SVM" ) )
 
@@ -2327,7 +2320,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testFilmOptions( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		# Get default values
 
@@ -2365,7 +2358,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testIntegratorOptions( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		# Get default values
 
@@ -2403,7 +2396,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testUnknownOptions( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create( "Cycles" )
+		renderer = self.createRenderer()
 
 		renderer.output(
 			"testOutput",
@@ -2439,10 +2432,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 			with self.subTest( threads = threads ) :
 
-				renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-					"Cycles",
-					GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-				)
+				renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 				renderer.option( "cycles:session:threads", IECore.IntData( threads ) )
 				self.assertEqual( renderer.command( "cycles:querySession", {} )["threads"].value, expectedThreads )
@@ -2458,10 +2448,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 			with self.subTest( device = device["id"] ) :
 
-				renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-					"Cycles",
-					GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-				)
+				renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 				# Ideally we want clients to emit all options before doing anything else,
 				# to simplify our internal session management. But certain important clients
@@ -2476,10 +2463,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testExposureEdit( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		renderer.output(
 			"testOutput",
@@ -2538,10 +2522,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testUnsupportedSessionEdit( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		renderer.option( "cycles:session:threads", IECore.IntData( 1 ) )
 
@@ -2574,10 +2555,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testUnsupportedSessionEdit( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		renderer.option( "cycles:session:threads", IECore.IntData( 1 ) )
 
@@ -2608,10 +2586,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testUnsupportedSceneEdit( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		renderer.output(
 			"testOutput",
@@ -2639,10 +2614,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testBackgroundLightgroup( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		renderer.output(
 			"testOutput",
@@ -2811,10 +2783,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testVDB( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		camera = renderer.camera(
 			"testCamera",
@@ -2913,10 +2882,7 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testDuplicateVDB( self ) :
 
-		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
-			"Cycles",
-			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive,
-		)
+		renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
 
 		camera = renderer.camera(
 			"testCamera",
