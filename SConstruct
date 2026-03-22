@@ -473,7 +473,7 @@ if env["PLATFORM"] != "win32" :
 	if "clang++" in os.path.basename( env["CXX"] ) :
 
 		env.Append(
-			CXXFLAGS = [ "-Wno-unused-local-typedef" ]
+			CXXFLAGS = [ "-pthread", "-Wno-unused-local-typedef" ]
 		)
 
 		# Turn off the parts of `-Wextra` that we don't like.
