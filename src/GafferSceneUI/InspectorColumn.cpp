@@ -249,10 +249,28 @@ PathColumn::CellData InspectorColumn::cellDataFromInspection( const GafferSceneU
 	}
 	else if( const auto source = MetadataAlgo::firstViewableNode( inspection->source() ) )
 	{
-		toolTip = "Source : " + source->relativeName( source->ancestor<ScriptNode>() );
-		if( inspection->sourceType() == Inspector::Result::SourceType::External )
+		if( inspection->sourceType() != Inspector::Result::SourceType::External )
 		{
-			toolTip += "\n\nSource is a node external to the script, such as a render adaptor";
+			toolTip = "Source : " + source->relativeName( source->ancestor<ScriptNode>() );
+		}
+		else
+		{
+			const Node *settingsNode = nullptr;
+			GraphComponent *graphComponent = source->parent();
+			while( graphComponent )
+			{
+				if( auto node = runTimeCast<const Node>( graphComponent ) )
+				{
+					if( node->isInstanceOf( "GafferUI::Editor::Settings" ) )
+					{
+						settingsNode = node;
+						break;
+					}
+				}
+
+				graphComponent = graphComponent->parent();
+			}
+			toolTip = "External Source : " + source->relativeName( settingsNode );
 		}
 	}
 
