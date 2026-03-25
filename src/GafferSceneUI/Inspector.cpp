@@ -127,6 +127,13 @@ std::string nonEditableReason( const ValuePlug *plug )
 	}
 
 	const ValuePlug *sourcePlug = ( plug && Animation::isAnimated( plug ) ) ? plug->source<ValuePlug>() : plug;
+	if( !sourcePlug->ancestor<ScriptNode>() )
+	{
+		return fmt::format(
+			"{} is external to the script.",
+			MetadataAlgo::firstViewableNode( sourcePlug )->fullName()
+		);
+	}
 
 	const GraphComponent *readOnlyReason = MetadataAlgo::readOnlyReason( sourcePlug );
 	if( readOnlyReason )
