@@ -49,6 +49,7 @@ import traceback
 import functools
 import pathlib
 import stat
+import time
 
 import imath
 
@@ -190,6 +191,24 @@ class TestCase( unittest.TestCase ) :
 			raise self.failureException(
 				f"{x} != {y} with error of {error}{message}"
 			)
+
+	def assertEventually( self, fn, timeout = 10.0, interval = 0.1, delayFn = time.sleep ) :
+
+		if not callable( fn ) :
+			raise TypeError( "assertEventually requires a callable" )
+
+		start = time.time()
+		lastError = None
+
+		while time.time() - start < timeout :
+			try :
+				fn()
+				return
+			except AssertionError as e :
+				lastError = e
+				delayFn( interval )
+
+		raise AssertionError( f"Timed out after {timeout}s : {lastError}" )
 
 	## Attempts to ensure that the hashes for a node
 	# are reasonable by jiggling around input values
