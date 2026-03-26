@@ -252,11 +252,12 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" )
-		self.assertEqualWithAbsError( self.__colorAtUV( image, imath.V2i( 0.5 ) ), imath.Color4f( 1 ), error = 0.01 )
+		self.assertEventually(
+			lambda : self.assertEqualWithAbsError( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2i( 0.5 ) ), imath.Color4f( 1 ), error = 0.01 )
+		)
+
+		renderer.pause()
 
 		renderer.option(
 			"ri:integrator",
@@ -275,10 +276,10 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.render()
-		time.sleep( 1 )
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" )
-		self.assertEqualWithAbsError( self.__colorAtUV( image, imath.V2i( 0.5 ) ), imath.Color4f( 0, 0.514107, 0, 1 ), error = 0.01 )
+		self.assertEventually(
+			lambda : self.assertEqualWithAbsError( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2i( 0.5 ) ), imath.Color4f( 0, 0.514107, 0, 1 ), error = 0.01 )
+		)
 
 		del object
 		del renderer
@@ -726,14 +727,15 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
 		# We should be illuminating the whole sphere.
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" )
-		self.assertGreater( self.__colorAtUV( image, imath.V2f( 0.3, 0.5 ) )[0], 0.5 )
-		self.assertGreater( self.__colorAtUV( image, imath.V2f( 0.6, 0.5 ) )[0], 0.5 )
+		self.assertEventually(
+			lambda : self.assertGreater( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2f( 0.3, 0.5 ) )[0], 0.5 )
+		)
+		self.assertGreater( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2f( 0.6, 0.5 ) )[0], 0.5 )
+
+		renderer.pause()
 
 		# Add a portal light.
 
@@ -753,26 +755,29 @@ class RendererTest( GafferTest.TestCase ) :
 		portal.transform( imath.M44f().translate( imath.V3f( 1, 0, -1 ) ).rotate( imath.V3f( 0, math.pi / 2, 0 ) ) )
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
-
 		# We should only be illuminating the side the portal is on.
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" )
-		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.3, 0.5 ) )[0], 0 )
-		self.assertGreater( self.__colorAtUV( image, imath.V2f( 0.6, 0.5 ) )[0], 0.5 )
+		self.assertEventually(
+			lambda : self.assertEqual( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2f( 0.3, 0.5 ) )[0], 0 )
+		)
+		self.assertEventually(
+			lambda : self.assertGreater( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2f( 0.6, 0.5 ) )[0], 0.5 )
+		)
+
+		renderer.pause()
 
 		# Delete the portal light. We should be back to illuminating
 		# on both sides.
 
 		del portal
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" )
-		self.assertGreater( self.__colorAtUV( image, imath.V2f( 0.4, 0.5 ) )[0], 0.5 )
-		self.assertGreater( self.__colorAtUV( image, imath.V2f( 0.6, 0.5 ) )[0], 0.5 )
+		self.assertEventually(
+			lambda : self.assertGreater( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2f( 0.4, 0.5 ) )[0], 0.5 )
+		)
+		self.assertGreater( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2f( 0.6, 0.5 ) )[0], 0.5 )
+
+		renderer.pause()
 
 		# Recreate the portal light. We should only be illuminating on
 		# one side again.
@@ -793,15 +798,16 @@ class RendererTest( GafferTest.TestCase ) :
 		portal.transform( imath.M44f().translate( imath.V3f( 1, 0, -1 ) ).rotate( imath.V3f( 0, math.pi / 2, 0 ) ) )
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" )
-		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.3, 0.5 ) )[0], 0 )
-		color = self.__colorAtUV( image, imath.V2f( 0.6, 0.5 ) )
+		self.assertEventually(
+			lambda : self.assertEqual( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2f( 0.3, 0.5 ) )[0], 0 )
+		)
+		color = self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2f( 0.6, 0.5 ) )
 		self.assertGreater( color[0], 0.5 )
 		self.assertGreater( color[1], 0.5 )
 		self.assertGreater( color[2], 0.5 )
+
+		renderer.pause()
 
 		# Increase the intensity of the portal and tint the light colour.
 
@@ -818,26 +824,28 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" )
-		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.3, 0.5 ) )[0], 0 )
 		expectedColor = color * imath.Color4f( 2, 0, 2, 1 )
-		color = self.__colorAtUV( image, imath.V2f( 0.6, 0.5 ) )
+		self.assertEventually(
+			lambda : self.assertAlmostEqual( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2f( 0.6, 0.5 ) )[0], expectedColor[0], delta = 0.01 )
+		)
+		color = self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2f( 0.6, 0.5 ) )
 		for i in range( 0, 4 ) :
 			self.assertAlmostEqual( color[i], expectedColor[i], delta = 0.01 )
+
+		renderer.pause()
 
 		# Now delete the dome light. We should get no illumination at all.
 
 		del dome
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" )
-		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.3, 0.5 ) )[0], 0 )
-		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.6, 0.5 ) )[0], 0 )
+		self.assertEventually(
+			lambda : self.assertEqual( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2f( 0.6, 0.5 ) )[0], 0 )
+		)
+		self.assertEqual( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2f( 0.3, 0.5 ) )[0], 0 )
+
+		renderer.pause()
 
 		# Recreate the dome light. We should again be illuminating only on one side.
 
@@ -856,12 +864,14 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" )
-		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.3, 0.5 ) )[0], 0 )
-		self.assertGreater( self.__colorAtUV( image, imath.V2f( 0.6, 0.5 ) )[0], 0.5 )
+		self.assertEventually(
+			lambda : self.assertGreater( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2f( 0.6, 0.5 ) )[0], 0.5 )
+		)
+
+		self.assertEqual( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "myLovelySphere" ), imath.V2f( 0.3, 0.5 ) )[0], 0 )
+
+		renderer.pause()
 
 		del sphere, portal, dome
 		del renderer
@@ -923,20 +933,22 @@ class RendererTest( GafferTest.TestCase ) :
 		light.transform( imath.M44f().translate( imath.V3f( 1, 0, -1 ) ).rotate( imath.V3f( 0, math.pi / 2, 0 ) ) )
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
 		# Sphere should appear green.
 
+		self.assertEventually(
+			lambda : self.assertGreater( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "meshLightTest" ), imath.V2f( 0.5, 0.5 ) )[1], 0.1 )
+		)
 		image = IECoreImage.ImageDisplayDriver.storedImage( "meshLightTest" )
 		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.5, 0.5 ) )[0], 0.0 )
-		self.assertGreater( self.__colorAtUV( image, imath.V2f( 0.5, 0.5 ) )[1], 0.1 )
 		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.5, 0.5 ) )[2], 0.0 )
 		self.assertEqualWithAbsError( self.__colorAtUV( image, imath.V2f( 0.5, 0.5 ) )[3], 1.0, 0.00001 )
 
 		# Light is camera visible and should be cyan.
 
 		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.75, 0.5 ) ), imath.Color4f( 0, 1, 1, 1 ) )
+
+		renderer.pause()
 
 		# Can also assign a surface shader to lights, in which case
 		# RenderMan will use it for ray hits. RenderMan seems to sum
@@ -959,11 +971,12 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "meshLightTest" )
-		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.75, 0.5 ) ), imath.Color4f( 1, 1, 1, 1 ) )
+		self.assertEventually(
+			lambda : self.assertEqual( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "meshLightTest" ), imath.V2f( 0.75, 0.5 ) ), imath.Color4f( 1, 1, 1, 1 ) )
+		)
+
+		renderer.pause()
 
 		# Make the light invisible to camera. It should continue to illuminate
 		# the sphere, but no longer be visible in the render.
@@ -976,8 +989,11 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
+
+		# No light in beauty.
+		self.assertEventually(
+			lambda : self.assertEqual( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "meshLightTest" ), imath.V2f( 0.75, 0.5 ) ), imath.Color4f( 0 ) )
+		)
 
 		# Green sphere.
 		image = IECoreImage.ImageDisplayDriver.storedImage( "meshLightTest" )
@@ -986,8 +1002,7 @@ class RendererTest( GafferTest.TestCase ) :
 		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.5, 0.5 ) )[2], 0.0 )
 		self.assertEqualWithAbsError( self.__colorAtUV( image, imath.V2f( 0.5, 0.5 ) )[3], 1.0, 0.00001 )
 
-		# No light in beauty.
-		self.assertEqual( self.__colorAtUV( image, imath.V2f( 0.75, 0.5 ) ), imath.Color4f( 0 ) )
+		renderer.pause()
 
 		del sphere, light
 		del renderer
@@ -1746,13 +1761,14 @@ class RendererTest( GafferTest.TestCase ) :
 		light = renderer.light( "light", None, lightAttributes() )
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
 		# No light filter yet. Sphere should appear white.
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" )
-		self.assertEqualWithAbsError( self.__color3AtUV( image, imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 1 ), 0.1 )
+		self.assertEventually(
+			lambda : self.assertEqualWithAbsError( self.__color3AtUV( IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" ), imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 1 ), 0.1 )
+		)
+
+		renderer.pause()
 
 		# Add a green light filter. Sphere should appear green.
 
@@ -1776,54 +1792,59 @@ class RendererTest( GafferTest.TestCase ) :
 		light.link( "lightFilters", { lightFilter } )
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" )
-		self.assertEqualWithAbsError( self.__color3AtUV( image, imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0, 1, 0 ), 0.1 )
+		self.assertEventually(
+			lambda : self.assertEqualWithAbsError( self.__color3AtUV( IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" ), imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0, 1, 0 ), 0.1 )
+		)
+
+		renderer.pause()
 
 		# Edit light filter tint. Sphere should update.
 
 		lightFilter.attributes( lightFilterAttributes( imath.Color3f( 0, 0, 1 ) ) )
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" )
-		self.assertEqualWithAbsError( self.__color3AtUV( image, imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0, 0, 1 ), 0.1 )
+		self.assertEventually(
+			lambda : self.assertEqualWithAbsError( self.__color3AtUV( IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" ), imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0, 0, 1 ), 0.1 )
+		)
+
+		renderer.pause()
 
 		# Edit light, and make sure filter is still applied.
 
 		light.attributes( lightAttributes( 1.0 ) )
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" )
-		self.assertEqualWithAbsError( self.__color3AtUV( image, imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0, 0, 2 ), 0.2 )
+		self.assertEventually(
+			lambda : self.assertEqualWithAbsError( self.__color3AtUV( IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" ), imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0, 0, 2 ), 0.2 )
+		)
+
+		renderer.pause()
 
 		# Remove light filter and check render is unfiltered.
 
 		light.link( "lightFilters", None )
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" )
-		self.assertEqualWithAbsError( self.__color3AtUV( image, imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 2 ), 0.2 )
+		self.assertEventually(
+			lambda : self.assertEqualWithAbsError( self.__color3AtUV( IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" ), imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 2 ), 0.2 )
+		)
+
+		renderer.pause()
 
 		# Remove light and check render is black.
 
 		del light
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" )
-		self.assertEqualWithAbsError( self.__color3AtUV( image, imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0 ), 0.1 )
+		self.assertEventually(
+			lambda : self.assertEqualWithAbsError( self.__color3AtUV( IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" ), imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0 ), 0.1 )
+		)
+
+		renderer.pause()
 
 		# Clean up.
 
@@ -1903,23 +1924,26 @@ class RendererTest( GafferTest.TestCase ) :
 		# Render with rod in center of plane and check expected result.
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" )
-		self.assertEqualWithAbsError( self.__color3AtUV( image, imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0 ), 0.1 )
-		self.assertEqualWithAbsError( self.__color3AtUV( image, imath.V2f( 0.68, 0.5 ) ), imath.Color3f( 1 ), 0.1 )
+		self.assertEventually(
+			lambda : self.assertEqualWithAbsError( self.__color3AtUV( IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" ), imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0 ), 0.1 )
+		)
+		self.assertEqualWithAbsError( self.__color3AtUV( IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" ), imath.V2f( 0.68, 0.5 ) ), imath.Color3f( 1 ), 0.1 )
+
+		renderer.pause()
 
 		# Move rod to right hand side of plane, and check expected result.
 
 		lightFilter.transform( imath.M44f().translate( imath.V3f( 1, 0, -2 ) ).scale( imath.V3f( 0.1 ) ) )
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" )
-		self.assertEqualWithAbsError( self.__color3AtUV( image, imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 1 ), 0.1 )
-		self.assertEqualWithAbsError( self.__color3AtUV( image, imath.V2f( 0.68, 0.5 ) ), imath.Color3f( 0 ), 0.1 )
+		self.assertEventually(
+			lambda : self.assertEqualWithAbsError( self.__color3AtUV( IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" ), imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 1 ), 0.1 )
+		)
+
+		self.assertEqualWithAbsError( self.__color3AtUV( IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" ), imath.V2f( 0.68, 0.5 ) ), imath.Color3f( 0 ), 0.1 )
+
+		renderer.pause()
 
 		# Clean up.
 
@@ -2005,13 +2029,14 @@ class RendererTest( GafferTest.TestCase ) :
 		light.link( "lightFilters", { lightFilter1, lightFilter2 } )
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
 		# `0.5 * 0.5 == 0.25`
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" )
-		self.assertEqualWithAbsError( self.__color3AtUV( image, imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0.25 ), 0.05 )
+		self.assertEventually(
+			lambda : self.assertEqualWithAbsError( self.__color3AtUV( IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" ), imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0.25 ), 0.05 )
+		)
+
+		renderer.pause()
 
 		# `min( 0.75, 0.5 ) == 0.5`
 
@@ -2019,11 +2044,12 @@ class RendererTest( GafferTest.TestCase ) :
 		lightFilter2.attributes( lightFilterAttributes( 0.5, "min" ) )
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" )
-		self.assertEqualWithAbsError( self.__color3AtUV( image, imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0.5 ), 0.05 )
+		self.assertEventually(
+			lambda : self.assertEqualWithAbsError( self.__color3AtUV( IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" ), imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0.5 ), 0.05 )
+		)
+
+		renderer.pause()
 
 		# The results from different groups are multiplied together
 		# so this is also `0.5 * 0.5 == 0.25`.
@@ -2032,11 +2058,12 @@ class RendererTest( GafferTest.TestCase ) :
 		lightFilter2.attributes( lightFilterAttributes( 0.5, "min" ) )
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" )
-		self.assertEqualWithAbsError( self.__color3AtUV( image, imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0.25 ), 0.05 )
+		self.assertEventually(
+			lambda : self.assertEqualWithAbsError( self.__color3AtUV( IECoreImage.ImageDisplayDriver.storedImage( "lightFilterTest" ), imath.V2f( 0.5, 0.5 ) ), imath.Color3f( 0.25 ), 0.05 )
+		)
+
+		renderer.pause()
 
 		# Clean up.
 
@@ -2095,11 +2122,12 @@ class RendererTest( GafferTest.TestCase ) :
 		# First test without any display filters.
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "testDisplayFilter" )
-		self.assertEqual( self.__colorAtUV( image, imath.V2i( 0.5 ) ), imath.Color4f( 0 ) )
+		self.assertEventually(
+			lambda : self.assertEqual( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "testDisplayFilter" ), imath.V2i( 0.5 ) ), imath.Color4f( 0 ) )
+		)
+
+		renderer.pause()
 
 		# Then apply a single display filter.
 
@@ -2119,11 +2147,12 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "testDisplayFilter" )
-		self.assertEqual( self.__colorAtUV( image, imath.V2i( 0.5 ) ), imath.Color4f( 1, 0, 0, 0 ) )
+		self.assertEventually(
+			lambda : self.assertEqual( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "testDisplayFilter" ), imath.V2i( 0.5 ) ), imath.Color4f( 1, 0, 0, 0 ) )
+		)
+
+		renderer.pause()
 
 		# And finally a combined one, the grade filter should apply after the background.
 
@@ -2156,9 +2185,12 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.render()
-		time.sleep( 1 )
-		image = IECoreImage.ImageDisplayDriver.storedImage( "testDisplayFilter" )
-		self.assertEqual( self.__colorAtUV( image, imath.V2i( 0.5 ) ), imath.Color4f( 0.5, 0, 0, 0 ) )
+
+		self.assertEventually(
+			lambda : self.assertEqual( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "testDisplayFilter" ), imath.V2i( 0.5 ) ), imath.Color4f( 0.5, 0, 0, 0 ) )
+		)
+
+		renderer.pause()
 
 		del renderer
 
@@ -2185,11 +2217,12 @@ class RendererTest( GafferTest.TestCase ) :
 		# First test without any sample filters.
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "testSampleFilter" )
-		self.assertEqual( self.__colorAtUV( image, imath.V2i( 0.5 ) ), imath.Color4f( 0 ) )
+		self.assertEventually(
+			lambda : self.assertEqual( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "testSampleFilter" ), imath.V2i( 0.5 ) ), imath.Color4f( 0 ) )
+		)
+
+		renderer.pause()
 
 		# Then apply a single sample filter.
 
@@ -2209,11 +2242,12 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.render()
-		time.sleep( 1 )
-		renderer.pause()
 
-		image = IECoreImage.ImageDisplayDriver.storedImage( "testSampleFilter" )
-		self.assertEqual( self.__colorAtUV( image, imath.V2i( 0.5 ) ), imath.Color4f( 1, 0, 0, 0 ) )
+		self.assertEventually(
+			lambda : self.assertEqual( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "testSampleFilter" ), imath.V2i( 0.5 ) ), imath.Color4f( 1, 0, 0, 0 ) )
+		)
+
+		renderer.pause()
 
 		# And finally a combined one, the grade filter should apply after the background.
 
@@ -2246,9 +2280,12 @@ class RendererTest( GafferTest.TestCase ) :
 		)
 
 		renderer.render()
-		time.sleep( 1 )
-		image = IECoreImage.ImageDisplayDriver.storedImage( "testSampleFilter" )
-		self.assertEqual( self.__colorAtUV( image, imath.V2i( 0.5 ) ), imath.Color4f( 0.5, 0, 0, 0 ) )
+
+		self.assertEventually(
+			lambda : self.assertEqual( self.__colorAtUV( IECoreImage.ImageDisplayDriver.storedImage( "testSampleFilter" ), imath.V2i( 0.5 ) ), imath.Color4f( 0.5, 0, 0, 0 ) )
+		)
+
+		renderer.pause()
 
 		del renderer
 
@@ -2711,8 +2748,9 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def __colorAtUV( self, image, uv ) :
 
-		dimensions = image.dataWindow.size() + imath.V2i( 1 )
+		self.assertIsInstance( image, IECoreImage.ImagePrimitive )
 
+		dimensions = image.dataWindow.size() + imath.V2i( 1 )
 		ix = int( uv.x * ( dimensions.x - 1 ) )
 		iy = int( uv.y * ( dimensions.y - 1 ) )
 		i = iy * dimensions.x + ix
