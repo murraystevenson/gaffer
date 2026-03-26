@@ -10,7 +10,7 @@ Improvements
 ------------
 
 - StandardLightVisualiser : Added surface texture visualisation for inputs to the `color` parameter of USD lights when GafferArnold is used (#6651).
-- SceneInspector, AttributeEditor, HierarchyView, LightEditor : Added inspection of scene edits performed by render adaptors registered to `client = "SceneEditor"`, such as those used by the Render Pass Editor to modify the scene at render time. Cells with values sourced from a render adaptor are displayed with a faded orange background and cannot be directly edited as render adaptors exist externally to the script and are not user-editable. The `render:defaultRenderer` option must be set in the scene globals in order for renderer-specific edits to be shown.
+- SceneInspector, AttributeEditor, HierarchyView, LightEditor, RenderPassEditor : Added inspection of scene edits performed by render adaptors registered to `client = "SceneEditor"`, such as those used by the Render Pass Editor to modify the scene at render time. Cells with values sourced from a render adaptor are displayed with a faded orange background and cannot be directly edited as render adaptors exist externally to the script and are not user-editable. The `render:defaultRenderer` option must be set in the scene globals in order for renderer-specific edits to be shown.
 
 Fixes
 -----

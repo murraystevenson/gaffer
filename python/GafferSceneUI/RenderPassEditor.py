@@ -426,7 +426,7 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 			if isinstance( columnCreator, str ) and columnCreator.startswith( "option:" ) :
 				columnCreator = self.__optionColumnCreator( columnCreator[7:], section )
 
-			column = columnCreator( self.settings()["in"], self.settings()["editScope"] )
+			column = columnCreator( self.settings()["__adaptedIn"], self.settings()["editScope"] )
 			self.__columnCache[ ( columnKey, section ) ] = column
 
 			if section == "Favourites" :
