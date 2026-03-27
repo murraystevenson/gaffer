@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '*_maintenance'
+      - 'sceneEditorRenderAdaptors'
   pull_request:
     branches:
       - '*'
