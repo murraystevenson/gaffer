@@ -970,7 +970,6 @@ class RendererTest( GafferTest.TestCase ) :
 
 	def testFaceVaryingMeshNormals( self ) :
 
-		# These are treated like non-existent normals, since Cycles doesn't support them.
 		cube = IECoreScene.MeshPrimitive.createBox( imath.Box3f( imath.V3f( -0.5 ), imath.V3f( 0.5 ) ) )
 		self.__testMeshSmoothing( cube, smoothingExpected = False )
 
@@ -979,6 +978,36 @@ class RendererTest( GafferTest.TestCase ) :
 		cube = IECoreScene.MeshPrimitive.createBox( imath.Box3f( imath.V3f( -0.5 ), imath.V3f( 0.5 ) ) )
 		cube["N"] = IECoreScene.MeshAlgo.calculateVertexNormals( cube, IECoreScene.MeshAlgo.NormalWeighting.Equal )
 		self.__testMeshSmoothing( cube, smoothingExpected = True )
+
+	def testUnsupportedMeshNormals( self ) :
+
+		renderer = self.createRenderer()
+		attributes = renderer.attributes( IECore.CompoundObject() )
+
+		cube = IECoreScene.MeshPrimitive.createBox( imath.Box3f( imath.V3f( -0.5 ), imath.V3f( 0.5 ) ) )
+
+		for interpolation in (
+			IECoreScene.PrimitiveVariable.Interpolation.Uniform,
+			IECoreScene.PrimitiveVariable.Interpolation.Vertex,
+			IECoreScene.PrimitiveVariable.Interpolation.FaceVarying,
+		) :
+			with self.subTest( interpolation = interpolation ) :
+
+				cube = cube.copy()
+				cube["N"] = IECoreScene.PrimitiveVariable(
+					interpolation,
+					IECore.V3iVectorData( [ imath.V3i( 0, 1, 0 ) ] * cube.variableSize( interpolation ), IECore.GeometricData.Interpretation.Normal )
+				)
+
+				with IECore.CapturingMessageHandler() as mh :
+
+					renderer.object( str( interpolation ), cube, attributes )
+
+					self.assertEqual( len( mh.messages ), 1 )
+					self.assertEqual(
+						mh.messages[0].message,
+						"Primitive variable \"N\" has unsupported type \"V3iVectorData\" (expected V3fVectorData)."
+					)
 
 	def testUnsupportedPrimitiveVariables( self ) :
 

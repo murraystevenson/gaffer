@@ -142,6 +142,13 @@ ccl::Attribute *convertTypedPrimitiveVariable( const std::string &name, const Pr
 		data = static_cast<const T *>( primitiveVariable.data.get() );
 	}
 
+	// Special case for normals as they need to be octahedrally encoded.
+	const bool isNormal = typeDesc == ccl::TypeNormal;
+	if( isNormal )
+	{
+		attributeElement = attributeElement == ccl::ATTR_ELEMENT_CORNER ? ccl::ATTR_ELEMENT_CORNER_NORMAL : ccl::ATTR_ELEMENT_VERTEX_NORMAL;
+	}
+
 	// Create attribute. Cycles will allocate a buffer based on `attributeElement` and the information
 	// `attributes.geometry` contains.
 
@@ -167,7 +174,29 @@ ccl::Attribute *convertTypedPrimitiveVariable( const std::string &name, const Pr
 
 	// Copy data into buffer.
 
-	if constexpr( std::is_same_v<T, V3fVectorData> || std::is_same_v<T, Color3fVectorData> )
+	if( isNormal )
+	{
+		if constexpr( std::is_same_v<T, V3fVectorData> )
+		{
+			ccl::packed_normal *pn = attribute->data_normal();
+			for( const auto &v : data->readable() )
+			{
+				*pn++ = ccl::packed_normal( ccl::make_float3( v.x, v.y, v.z ) );
+			}
+		}
+		else
+		{
+			msg(
+				Msg::Warning, "IECoreCyles::GeometryAlgo::convertPrimitiveVariable",
+				fmt::format(
+					"Primitive variable \"{}\" has unsupported type \"{}\" (expected V3fVectorData).",
+					name, primitiveVariable.data->typeName()
+				)
+			);
+			return nullptr;
+		}
+	}
+	else if constexpr( std::is_same_v<T, V3fVectorData> || std::is_same_v<T, Color3fVectorData> )
 	{
 		// Special case for arrays of `float3`, where each element actually contains 4 floats for alignment purposes.
 		ccl::float3 *f3 = attribute->data_float3();
@@ -374,9 +403,13 @@ void convertPrimitiveVariable( const std::string &name, const IECoreScene::Primi
 	/// use `convertPrimitiveVariable()` for most data, instead of having
 	/// custom code paths for `P`, `uv` etc?
 
-	if( name == "N" && attr->element == ccl::ATTR_ELEMENT_VERTEX && attr->type == ccl::TypeNormal )
+	if( name == "N" && attr->element == ccl::ATTR_ELEMENT_VERTEX_NORMAL && attr->type == ccl::TypeNormal )
 	{
 		attr->std = ccl::ATTR_STD_VERTEX_NORMAL;
+	}
+	else if( name == "N" && attr->element == ccl::ATTR_ELEMENT_CORNER_NORMAL && attr->type == ccl::TypeNormal )
+	{
+		attr->std = ccl::ATTR_STD_CORNER_NORMAL;
 	}
 	else if( name == "uv" && attr->type == ccl::TypeFloat2 )
 	{
