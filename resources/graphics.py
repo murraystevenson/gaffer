@@ -530,6 +530,7 @@
 				"searchFieldBackground",
 				"search",
 				"searchOn",
+				"home",
 			],
 
 		},

@@ -37,15 +37,38 @@
 
 import functools
 import imath
+import weakref
 
 import IECore
 
 import Gaffer
 import GafferUI
 
+class _ViewableChildrenPathFilter( Gaffer.PathFilter ) :
+
+	def __init__( self, scriptRoot, userData = {} ) :
+
+		Gaffer.PathFilter.__init__( self, userData )
+
+		self.__scriptRoot = scriptRoot
+
+	def _filter( self, paths, canceller ) :
+
+		result = []
+		for p in paths :
+			n = self.__scriptRoot.descendant( str( p ).lstrip( "/" ).replace( "/", "." ) )
+			if isinstance( n, Gaffer.Node ) and Gaffer.Metadata.value( n, "ui:childNodesAreViewable" ) :
+				result.append( p )
+
+		return result
+
 class GraphEditor( GafferUI.Editor ) :
 
 	def __init__( self, scriptNode, **kw ) :
+
+		column = GafferUI.ListContainer( borderWidth = 4, spacing = 4 )
+
+		GafferUI.Editor.__init__( self, column, scriptNode, **kw )
 
 		# We want to disable precise navigation motions as they interfere
 		# with our keyboard shortcuts and aren't that useful in the graph
@@ -55,18 +78,27 @@ class GraphEditor( GafferUI.Editor ) :
 
 		self.__gadgetWidget = GafferUI.GadgetWidget( gadget = viewportGadget )
 
-		GafferUI.Editor.__init__( self, self.__gadgetWidget, scriptNode, **kw )
-
 		graphGadget = GafferUI.GraphGadget( self.scriptNode() )
 		graphGadget.rootChangedSignal().connect( Gaffer.WeakMethod( self.__rootChanged ) )
 
 		self.__gadgetWidget.getViewportGadget().setPrimaryChild( graphGadget )
+
+		self.__rootPath = Gaffer.GraphComponentPath( self.scriptNode(), [], filter = _ViewableChildrenPathFilter( self.scriptNode() ) )
+		self.__rootPathChangedConnection = self.__rootPath.pathChangedSignal().connect( Gaffer.WeakMethod( self.__rootPathChanged ), scoped = True )
+
+		with column :
+			with GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Horizontal, spacing = 4 ) :
+				crumbs = GafferUI.BreadCrumbsWidget( self.__rootPath )
+				crumbs.pathContextMenuSignal().connect( Gaffer.WeakMethod( self.__breadCrumbsPathContextMenu ) )
+
+		column.addChild( self.__gadgetWidget )
+
 		self.__gadgetWidget.getViewportGadget().setDragTracking( GafferUI.ViewportGadget.DragTracking.XDragTracking | GafferUI.ViewportGadget.DragTracking.YDragTracking )
 		self.__frame( scriptNode.selection() )
 
-		self.__gadgetWidget.buttonPressSignal().connect( Gaffer.WeakMethod( self.__buttonPress ) )
-		self.__gadgetWidget.keyPressSignal().connect( Gaffer.WeakMethod( self.__keyPress ) )
-		self.__gadgetWidget.buttonDoubleClickSignal().connect( Gaffer.WeakMethod( self.__buttonDoubleClick ) )
+		self.__gadgetWidget.getViewportGadget().buttonPressSignal().connect( Gaffer.WeakMethod( self.__buttonPress ) )
+		self.__gadgetWidget.getViewportGadget().keyPressSignal().connect( Gaffer.WeakMethod( self.__keyPress ) )
+		self.__gadgetWidget.getViewportGadget().buttonDoubleClickSignal().connect( Gaffer.WeakMethod( self.__buttonDoubleClick ) )
 		self.dragEnterSignal().connect( Gaffer.WeakMethod( self.__dragEnter ) )
 		self.dragLeaveSignal().connect( Gaffer.WeakMethod( self.__dragLeave ) )
 		self.dropSignal().connect( Gaffer.WeakMethod( self.__drop ) )
@@ -120,7 +152,7 @@ class GraphEditor( GafferUI.Editor ) :
 
 		root = self.graphGadget().getRoot()
 		if not root.isSame( self.scriptNode() ) :
-			result += " : " + root.relativeName( self.scriptNode() ).replace( ".", " / " )
+			result += " : " + root.getName()
 
 		return result
 
@@ -614,7 +646,12 @@ class GraphEditor( GafferUI.Editor ) :
 
 		self.titleChangedSignal()( self )
 
+		self.__rootPath.setFromComponent( graphGadget.getRoot() )
+
 	def __rootNameChanged( self, root, oldName ) :
+
+		with Gaffer.Signals.BlockedConnection( self.__rootPathChangedConnection ) :
+			self.__rootPath.setFromComponent( self.graphGadget().getRoot() )
 
 		self.titleChangedSignal()( self )
 
@@ -623,6 +660,11 @@ class GraphEditor( GafferUI.Editor ) :
 		# This may be called for our root, or any of its parents
 		if node.parent() == None :
 			self.graphGadget().setRoot( self.scriptNode() )
+
+	def __rootPathChanged( self, path ) :
+
+		with Gaffer.Signals.BlockedConnection( self.__rootPathChangedConnection ) :
+			self.graphGadget().setRoot( path.property( "graphComponent:graphComponent" ) )
 
 	def __preRender( self, viewportGadget ) :
 
@@ -651,6 +693,22 @@ class GraphEditor( GafferUI.Editor ) :
 		# layout has gone off screen.
 
 		self.frame( nodes, extend = True )
+
+	def __acquireGraphEditorFromPath( self, pathString ) :
+
+		scriptNode = self.ancestor( GafferUI.ScriptWindow ).scriptNode()
+		n = scriptNode.descendant( pathString ) if pathString else scriptNode
+		GafferUI.GraphEditor.acquire( n )
+
+	def __breadCrumbsPathContextMenu( self, path, widget, menuDefinition ) :
+
+		menuDefinition.append(
+			"Open in new Graph Editor",
+			{
+				"command" : functools.partial( Gaffer.WeakMethod( self.__acquireGraphEditorFromPath ), pathString = str( path ) ),
+				"active" : path != self.__rootPath,
+			}
+		)
 
 	def __annotationsMenu( self ) :
 
