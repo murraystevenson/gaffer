@@ -85,7 +85,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 archiveURL = args.archiveURL.format(
-	platform = { "darwin" : "macos", "win32" : "windows" }.get( sys.platform, "linux" ),
+	platform = { "darwin" : "macos-arm64", "win32" : "windows" }.get( sys.platform, "linux" ),
 	vfxPlatform = args.vfxPlatform,
 	extension = "tar.gz" if sys.platform != "win32" else "zip"
 )
