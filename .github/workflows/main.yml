@@ -96,7 +96,7 @@ jobs:
             buildType: RELEASE
             publish: false
             containerImage:
-            testArguments: -excludedCategories performance GafferDelightTest GafferDelightUITest GafferDispatchTest GafferDispatchUITest GafferImageTest GafferImageUITest GafferMLTest GafferMLUITest GafferOSLTest GafferOSLUITest GafferSceneTest GafferSceneUITest GafferTest GafferTractorTest GafferTractorUITest GafferUITest GafferUSDTest GafferUSDUITest GafferVDBTest GafferVDBUITest IECoreDelightTest
+            testArguments: -excludedCategories performance
             sconsCacheMegabytes: 400
             jobs: 3
 
