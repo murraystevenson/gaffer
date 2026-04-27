@@ -26,6 +26,7 @@ and BSpline curves to their endpoints automatically, without manual management o
 - SceneReader, SceneWriter : Added support for pinned UsdGeomBasisCurves.
 - OSLCode : The OSL shader is now compiled on demand, rather than every time the node is edited. This avoids many redundant attempts at recompilation when loading nodes with many parameters.
 - ArnoldMeshLight, RenderManMeshLight : Added support for deformation motion blur (#6869). In the case of RenderMan, this only affects the camera-visible mesh, since RenderMan doesn't yet support deformation for the light itself.
+- TweakPlug : Added `SetExpressionInclude` and `SetExpressionExclude` modes for tweaking set expressions.
 
 Fixes
 -----

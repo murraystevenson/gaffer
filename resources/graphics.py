@@ -404,6 +404,8 @@
 				"listPrependSmall",
 				"listRemoveSmall",
 				"removeSmall",
+				"setExpressionIncludeSmall",
+				"setExpressionExcludeSmall",
 			]
 		},
 
@@ -531,13 +533,13 @@
 			],
 
 		},
-		
+
 		"nodeEditor" : {
-			
+
 			"options" : {
 				"validatePixelAlignment" : True,
 			},
-			
+
 			"ids" : [
 				"rendererArnoldOnIcon",
 				"rendererArnoldOffIcon",
