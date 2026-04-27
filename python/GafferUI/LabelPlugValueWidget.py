@@ -50,6 +50,7 @@ from Qt import QtWidgets
 #  - "labelPlugValueWidget:showValueChangedIndicator" : If `False`, the indicator that the
 #  plug value has changed will not be shown. Defaults to `True` if not set.
 #  - "labelPlugValueWidget:icon" : An icon to display next to the plug label.
+#  - "labelPlugValueWidget:iconToolTip" : A toolTip to show for the icon.
 class LabelPlugValueWidget( GafferUI.PlugValueWidget ) :
 
 	## \todo Remove alignment arguments. Vertically the only alignment that looks good is `Center`, and
@@ -303,6 +304,8 @@ class LabelPlugValueWidget( GafferUI.PlugValueWidget ) :
 			self.__label.setFormatter( self.__formatter )
 		elif key == "labelPlugValueWidget:icon" :
 			self.__updateIcon()
+		elif key == "labelPlugValueWidget:iconToolTip" :
+			self.__updateIcon()
 
 	def __updateIcon( self ) :
 
@@ -313,6 +316,9 @@ class LabelPlugValueWidget( GafferUI.PlugValueWidget ) :
 
 		if ( icon := sole( Gaffer.Metadata.value( p, "labelPlugValueWidget:icon" ) for p in self.getPlugs() )  ) is not None :
 			self.__iconWidget = GafferUI.Image( icon )
+			toolTip = sole( Gaffer.Metadata.value( p, "labelPlugValueWidget:iconToolTip" ) for p in self.getPlugs() )
+			if toolTip is not None :
+				self.__iconWidget.setToolTip( toolTip )
 			layout.addWidget( self.__iconWidget._qtWidget() )
 
 	@staticmethod

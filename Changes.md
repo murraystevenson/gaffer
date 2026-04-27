@@ -13,7 +13,7 @@ API
   - Added columns for RenderMan-specific parameters on USD lights.
   - Added columns for RenderMan light filters.
 - LabelPlugValueWidget :
-  - Added support for icons on plug names using `labelPlugValueWidget:icon`.
+  - Added support for icons and icon toolTips on plug names using `labelPlugValueWidget:icon` and `labelPlugValueWidget:iconToolTip` metadata, respectively.
   - Added `setFixedWidth()` method.
 
 Fixes
