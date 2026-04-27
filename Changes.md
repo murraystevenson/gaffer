@@ -59,6 +59,7 @@ API
 - Light : Simplified implementation of derived classes, which are now merely responsible for passing a Shader node to the base class constructor.
 - MeshLight : Added based class to simplify the implementation of renderer-specific mesh light nodes.
 - PathColumn : `headerData()` is now passed the root Path.
+- SetExpressionAlgo : Added new namespace with functions for evaluating set expressions.
 
 Breaking Changes
 ----------------
