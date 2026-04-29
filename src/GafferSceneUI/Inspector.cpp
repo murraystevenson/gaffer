@@ -57,24 +57,24 @@ using namespace Gaffer;
 using namespace GafferScene;
 using namespace GafferSceneUI::Private;
 
-using ConstPredecessors = std::vector<const SceneAlgo::History *>;
-
-static InternedString g_contextVariablesPropertyName( "history:contextVariables" );
-static InternedString g_varyingContextVariablesPropertyName( "history:varyingContextVariables" );
-static InternedString g_valuePropertyName( "history:value" );
-static InternedString g_fallbackValuePropertyName( "history:fallbackValue" );
-static InternedString g_operationPropertyName( "history:operation" );
-static InternedString g_sourcePropertyName( "history:source" );
-static InternedString g_editWarningPropertyName( "history:editWarning" );
-static InternedString g_nodePropertyName( "history:node" );
-static InternedString g_contextPropertyName( "history:context" );
-
 //////////////////////////////////////////////////////////////////////////
 // Internal utilities
 //////////////////////////////////////////////////////////////////////////
 
 namespace
 {
+
+using ConstPredecessors = std::vector<const SceneAlgo::History *>;
+
+const InternedString g_contextVariablesPropertyName( "history:contextVariables" );
+const InternedString g_varyingContextVariablesPropertyName( "history:varyingContextVariables" );
+const InternedString g_valuePropertyName( "history:value" );
+const InternedString g_fallbackValuePropertyName( "history:fallbackValue" );
+const InternedString g_operationPropertyName( "history:operation" );
+const InternedString g_sourcePropertyName( "history:source" );
+const InternedString g_editWarningPropertyName( "history:editWarning" );
+const InternedString g_nodePropertyName( "history:node" );
+const InternedString g_contextPropertyName( "history:context" );
 
 /// \todo Why would this walk past all the output plugs except the last one? I
 /// suspect this wasn't the intention.
