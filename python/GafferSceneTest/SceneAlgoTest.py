@@ -2172,6 +2172,17 @@ class SceneAlgoTest( GafferSceneTest.SceneTestCase ) :
 
 		assertNoCanceller( history )
 
+	def testAttributeHistoryCancellation( self ) :
+
+		light = GafferSceneTest.TestLight()
+		attributesHistory = GafferScene.SceneAlgo.history( light["out"]["attributes"], "/light" )
+
+		canceller = IECore.Canceller()
+		canceller.cancel()
+
+		with self.assertRaises( IECore.Cancelled ) :
+			GafferScene.SceneAlgo.attributeHistory( attributesHistory, "light", canceller )
+
 	@GafferTest.TestRunner.PerformanceTestMethod()
 	def testHistoryDiamondPerformance( self ) :
 

@@ -249,6 +249,12 @@ struct AttributeHistory : public History
 /// Filters `attributesHistory` and returns a history for the specific `attribute`.
 /// `attributesHistory` should have been obtained from a previous call to
 /// `history( scene->attributesPlug(), path )`.
+///
+/// > Note : This function is not sensitive to the current context because it uses the contexts
+/// > from `attributesHistory`. Hence a separate canceller must be passed if cancellation is
+/// > required.
+GAFFERSCENE_API AttributeHistory::Ptr attributeHistory( const History *attributesHistory, const IECore::InternedString &attribute, const IECore::Canceller *canceller );
+/// \todo Remove and add nullptr `canceller` default in the version above.
 GAFFERSCENE_API AttributeHistory::Ptr attributeHistory( const History *attributesHistory, const IECore::InternedString &attribute );
 
 /// Extends History to provide information on the history of a specific option.
