@@ -1,6 +1,11 @@
 1.6.x.x (relative to 1.6.17.0)
 =======
 
+Improvements
+------------
+
+- ShaderTweaks, ShaderQuery : Added `RenderMan Light Filter` preset for the `shader` plug.
+
 Fixes
 -----
 
