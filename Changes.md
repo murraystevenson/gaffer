@@ -5,6 +5,7 @@ Improvements
 ------------
 
 - ShaderTweaks, ShaderQuery : Added `RenderMan Light Filter` preset for the `shader` plug.
+- LightEditor : Added columns for RenderMan-specific parameters on USD lights.
 
 Fixes
 -----
