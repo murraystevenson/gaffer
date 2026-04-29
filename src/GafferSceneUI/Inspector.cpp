@@ -314,7 +314,7 @@ Inspector::ResultPtr Inspector::inspect() const
 			IECore::msg( IECore::Msg::Level::Error, "Inspector", "Fallback value without a description" );
 		}
 	}
-	inspectHistoryWalk( history.get(), result.get() );
+	inspectHistoryWalk( history.get(), result.get(), Context::current()->canceller() );
 
 	if( !result->m_value && !result->m_fallbackValue && !result->editable() )
 	{
@@ -389,8 +389,9 @@ Inspector::InspectorSignal &Inspector::dirtiedSignal()
 	return *m_dirtiedSignal;
 }
 
-void Inspector::inspectHistoryWalk( const GafferScene::SceneAlgo::History *history, Result *result ) const
+void Inspector::inspectHistoryWalk( const GafferScene::SceneAlgo::History *history, Result *result, const IECore::Canceller *canceller ) const
 {
+	IECore::Canceller::check( canceller );
 	Node *node = history->scene->node();
 
 	// If we might have a use for it, see if there's a source for the inspected
@@ -405,7 +406,8 @@ void Inspector::inspectHistoryWalk( const GafferScene::SceneAlgo::History *histo
 	{
 		if( auto dependencyNode = runTimeCast<DependencyNode>( node ) )
 		{
-			Context::Scope scope( history->context.get() );
+			Context::EditableScope scope( history->context.get() );
+			scope.setCanceller( canceller );
 			const BoolPlug *enabledPlug = dependencyNode->enabledPlug();
 			if( !enabledPlug || enabledPlug->getValue() )
 			{
@@ -485,7 +487,8 @@ void Inspector::inspectHistoryWalk( const GafferScene::SceneAlgo::History *histo
 				// in the `outPlug()` context, to avoid making edits to locations
 				// other than the one emerging from the EditScope.
 				result->m_editScopeInHistory = true;
-				Context::Scope scope( history->context.get() );
+				Context::EditableScope scope( history->context.get() );
+				scope.setCanceller( canceller );
 				AcquireEditFunctionOrFailure func;
 				if( editScope->enabledPlug()->getValue() )
 				{
@@ -539,7 +542,7 @@ void Inspector::inspectHistoryWalk( const GafferScene::SceneAlgo::History *histo
 		{
 			return;
 		}
-		inspectHistoryWalk( predecessor.get(), result );
+		inspectHistoryWalk( predecessor.get(), result, canceller );
 	}
 }
 

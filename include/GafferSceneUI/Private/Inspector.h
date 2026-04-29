@@ -212,7 +212,7 @@ class GAFFERSCENEUI_API Inspector : public IECore::RunTimeTyped, public Gaffer::
 
 	private :
 
-		void inspectHistoryWalk( const GafferScene::SceneAlgo::History *history, Result *result ) const;
+		void inspectHistoryWalk( const GafferScene::SceneAlgo::History *history, Result *result, const IECore::Canceller *canceller ) const;
 		void plugDirtied( Gaffer::Plug *plug );
 		void plugMetadataChanged( IECore::InternedString key, const Gaffer::Plug *plug );
 		void nodeMetadataChanged( IECore::InternedString key, const Gaffer::Node *node );
