@@ -103,6 +103,8 @@ class _OperationIconColumn( GafferUI.PathColumn ) :
 			Gaffer.TweakPlug.Mode.ListAppend : "listAppendSmall.png",
 			Gaffer.TweakPlug.Mode.ListPrepend : "listPrependSmall.png",
 			Gaffer.TweakPlug.Mode.ListRemove : "listRemoveSmall.png",
+			Gaffer.TweakPlug.Mode.SetExpressionInclude : "setExpressionIncludeSmall.png",
+			Gaffer.TweakPlug.Mode.SetExpressionExclude : "setExpressionExcludeSmall.png",
 		}.get( cellValue )
 
 		return data
