@@ -76,6 +76,8 @@ const InternedString g_editWarningPropertyName( "history:editWarning" );
 const InternedString g_nodePropertyName( "history:node" );
 const InternedString g_contextPropertyName( "history:context" );
 
+const std::thread::id g_mainThreadId = std::this_thread::get_id();
+
 /// \todo Why would this walk past all the output plugs except the last one? I
 /// suspect this wasn't the intention.
 Gaffer::Plug *sourceInput( Gaffer::Plug *plug )
@@ -299,6 +301,11 @@ const std::string &Inspector::name() const
 
 Inspector::ResultPtr Inspector::inspect() const
 {
+	if( std::this_thread::get_id() != g_mainThreadId && !Context::current()->canceller() )
+	{
+		IECore::msg( IECore::Msg::Warning, "Inspector::inspect", fmt::format( "No canceller for background inspection of {}", m_targets[0]->fullName() ) );
+	}
+
 	SceneAlgo::History::ConstPtr history = this->history();
 	if( !history )
 	{
