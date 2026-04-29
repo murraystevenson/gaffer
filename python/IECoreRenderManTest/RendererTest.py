@@ -49,6 +49,7 @@ import IECoreImage
 import IECoreScene
 import IECoreRenderMan
 import IECoreRenderManTest
+import IECoreVDB
 
 import GafferTest
 import GafferScene
@@ -2707,6 +2708,65 @@ class RendererTest( GafferTest.TestCase ) :
 		self.runOverscanTest( imath.V2i( 200, 200 ), 14, 13, 12, 11 )
 		self.runOverscanTest( imath.V2i( 750, 750 ), 249, 249, 249, 249 )
 		self.runOverscanTest( imath.V2i( 162, 512 ), 745, 347, 819, 882 )
+
+	def testVolumeTransformEdit( self ) :
+
+		renderer = GafferScene.Private.IECoreScenePreview.Renderer.create(
+			self.renderer,
+			GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive
+		)
+
+		renderer.output(
+			"test",
+			IECoreScene.Output(
+				"test",
+				"ieDisplay",
+				"rgba",
+				{
+					"driverType" : "ImageDisplayDriver",
+					"handle" : "myLovelySphere",
+				}
+			)
+		)
+
+		sphere = renderer.object(
+			"sphere",
+			IECoreVDB.VDBObject( "./python/GafferArnoldTest/volumes/sphere.vdb" ),
+			renderer.attributes( IECore.CompoundObject( {
+				"ri:surface" : IECoreScene.ShaderNetwork(
+					shaders = {
+						"output" : IECoreScene.Shader( "PxrVolume", parameters = { "densityFloatPrimVar" : "density" } )
+					},
+					output = "output",
+				)
+			} ) )
+		)
+		sphere.transform( imath.M44f().translate( imath.V3f( 0, -2, -2 ) ) )
+		renderer.render()
+
+		# Volume should be visible in the middle of the image, and not at the top.
+		self.assertEventually(
+			lambda : self.assertGreater( self.__colorAtUV( "myLovelySphere", imath.V2f( 0.5, 0.5 ) ).a, 0.25 )
+		)
+		self.assertEventually(
+			lambda : self.assertEqual( self.__colorAtUV( "myLovelySphere", imath.V2f( 0.5, 0.0 ) ).a, 0 )
+		)
+
+		renderer.pause()
+		sphere.transform( imath.M44f().translate( imath.V3f( 0, 0, -2 ) ) )
+		renderer.render()
+
+		# Volume should have moved to the top of the image.
+		self.assertEventually(
+			lambda : self.assertEqual( self.__colorAtUV( "myLovelySphere", imath.V2f( 0.5, 0.5 ) ).a, 0 )
+		)
+		self.assertEventually(
+			lambda : self.assertGreater( self.__colorAtUV( "myLovelySphere", imath.V2f( 0.5, 0.0 ) ).a, 0.25 )
+		)
+
+		renderer.pause()
+		del sphere
+		del renderer
 
 	def __assertParameterEqual( self, paramList, name, data, tolerance = None ) :
 
