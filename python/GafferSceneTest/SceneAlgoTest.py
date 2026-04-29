@@ -2136,7 +2136,18 @@ class SceneAlgoTest( GafferSceneTest.SceneTestCase ) :
 		self.assertEqual( len( history.predecessors ), 1 )
 		self.assertEqual( history.predecessors[0].scene, script["dot"]["in"] )
 
-	def testHistoryWithCanceller( self ) :
+	def testHistoryCancellation( self ) :
+
+		plane = GafferScene.Plane()
+
+		context = Gaffer.Context()
+		canceller = IECore.Canceller()
+		canceller.cancel()
+		with Gaffer.Context( context, canceller ) :
+			with self.assertRaises( IECore.Cancelled ) :
+				GafferScene.SceneAlgo.history( plane["out"]["object"], "/plane" )
+
+	def testHistoryOmitsCanceller( self ) :
 
 		plane = GafferScene.Plane()
 		group = GafferScene.Group()
