@@ -328,6 +328,18 @@ if os.environ.get( "GAFFERRENDERMAN_HIDE_UI", "" ) != "1" :
 		GafferSceneUI.LightEditor.registerParameter( "ri:light", "msApproxBleed", "Multi-Scattering Approx" )
 		GafferSceneUI.LightEditor.registerParameter( "ri:light", "msApproxContribution", "Multi-Scattering Approx" )
 
+		# Register RenderMan-specific parameters for USD lights.
+		for parameter in [
+			"colorMapGamma", "colorMapSaturation", "emissionFocusNormalize", "intensityNearDist", "diffuseNearDist",
+			"specularNearDist", "traceLightPaths", "thinShadow", "visibleInRefractionPath", "cheapCaustics",
+			"cheapCausticsExcludeGroup", "fixedSampleCount", "lightGroup", "importanceMultiplier", "msApprox",
+			"msApproxBleed", "msApproxContribution", "cameraVisibleAlpha"
+		] :
+			GafferSceneUI.LightEditor.registerParameter(
+				"light", f"ri:light:{parameter}", "RenderMan",
+				columnName = parameter.replace( "ri:light:", "" )
+			)
+
 # Register generic light attributes
 for attributeName in [
 	"gl:visualiser:scale",
