@@ -13,6 +13,7 @@ Fixes
 -----
 
 - RenderMan : Fixed interactive edits to volume transforms.
+- Scene Editors : Fixed performance regression introduced in 1.6.15.0. This could significantly affect refresh times for certain scenes.
 
 1.6.17.0 (relative to 1.6.16.0)
 ========
