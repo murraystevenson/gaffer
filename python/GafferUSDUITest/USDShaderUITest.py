@@ -1,6 +1,6 @@
 ##########################################################################
 #
-#  Copyright (c) 2022, Cinesite VFX Ltd. All rights reserved.
+#  Copyright (c) 2026, Cinesite VFX Ltd. All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
 #        disclaimer in the documentation and/or other materials provided with
 #        the distribution.
 #
-#      * Neither the name of Image Engine Design Inc nor the names of
+#      * Neither the name of John Haddon nor the names of
 #        any other contributors to this software may be used to endorse or
 #        promote products derived from this software without specific prior
 #        written permission.
@@ -34,9 +34,26 @@
 #
 ##########################################################################
 
-from .DocumentationTest import DocumentationTest
-from .NodeUITest import NodeUITest
-from .USDShaderUITest import USDShaderUITest
+import unittest
+
+import IECore
+
+import Gaffer
+import GafferUSD
+import GafferUSDUI
+import GafferUITest
+
+class USDShaderUITest( GafferUITest.TestCase ) :
+
+	def testPresetsMetadata( self ) :
+
+		node = GafferUSD.USDShader()
+		node.loadShader( "UsdPreviewSurface" )
+
+		self.assertEqual(
+			Gaffer.Metadata.value( node["parameters"]["opacityMode"], "presetNames" ),
+			IECore.StringVectorData( [ "transparent", "presence" ] )
+		)
 
 if __name__ == "__main__":
 	unittest.main()
