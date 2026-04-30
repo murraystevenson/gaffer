@@ -691,6 +691,7 @@ struct AstEvaluator
 			const std::vector<IECore::InternedString> &setNames = m_setProvider.setNames()->readable();
 			if( setNames.empty() )
 			{
+				std::cout << "AstEvaluator :: EMPTY setNames" << std::endl;
 				return result;
 			}
 
