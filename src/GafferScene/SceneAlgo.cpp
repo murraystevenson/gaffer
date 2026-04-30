@@ -1241,7 +1241,7 @@ ShaderTweaks *SceneAlgo::shaderTweaks( const ScenePlug *scene, const ScenePlug::
 	{
 		History::ConstPtr h = history( scene->attributesPlug(), inheritancePath );
 		auto ah = attributeHistory( h.get(), attributeName );
-		if( ah && ah->attributeValue )
+		if( ah->attributeValue )
 		{
 			return shaderTweaksWalk( ah.get() );
 		}
