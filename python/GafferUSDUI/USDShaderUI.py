@@ -75,11 +75,11 @@ def __primProperty( plug ) :
 
 def __sdrProperty( plug ) :
 
-	sdrNode = Sdr.Registry().GetNodeByName( __shaderName( plug ) )
+	sdrNode = Sdr.Registry().GetShaderNodeByName( __shaderName( plug ) )
 	if plug.direction() == Gaffer.Plug.Direction.In :
-		return sdrNode.GetInput( plug.getName() )
+		return sdrNode.GetShaderInput( plug.getName() )
 	else :
-		return sdrNode.GetOutput( plug.getName() )
+		return sdrNode.GetShaderOutput( plug.getName() )
 
 def __sdrMetadata( plug, name ) :
 
