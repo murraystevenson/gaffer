@@ -123,7 +123,18 @@ Build
 1.6.x.x (relative to 1.6.17.0)
 =======
 
+Improvements
+------------
 
+- ShaderTweaks, ShaderQuery : Added `RenderMan Light Filter` preset for the `shader` plug.
+- LightEditor :
+  - Added columns for RenderMan-specific parameters on USD lights.
+  - Added columns for RenderMan light filters.
+
+Fixes
+-----
+
+- RenderMan : Fixed interactive edits to volume transforms.
 
 1.6.17.0 (relative to 1.6.16.0)
 ========
