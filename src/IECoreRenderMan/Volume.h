@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (c) 2024, Cinesite VFX Ltd. All rights reserved.
+//  Copyright (c) 2026, Cinesite VFX Ltd. All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without
 //  modification, are permitted provided that the following conditions are
@@ -36,43 +36,29 @@
 
 #pragma once
 
-#include "Attributes.h"
-#include "GeometryPrototypeCache.h"
-#include "LightLinker.h"
-#include "Session.h"
+#include "IECoreVDB/VDBObject.h"
 
-#include "GafferScene/Private/IECoreScenePreview/Renderer.h"
+#include "Object.h"
 
 namespace IECoreRenderMan
 {
 
-class Object : public IECoreScenePreview::Renderer::ObjectInterface
+// Subclass of Object used to work around oddities of the Riley API.
+class Volume : public Object
 {
 
 	public :
 
-		Object( const std::string &name, const ConstGeometryPrototypePtr &geometryPrototype, const Attributes *attributes, LightLinker *lightLinker, const Session *session );
-		~Object() override;
+		Volume( const std::string &name, const ConstGeometryPrototypePtr &geometryPrototype, const Attributes *attributes, LightLinker *lightLinker, const Session *session, const IECoreVDB::VDBObject *vdbObject );
 
 		void transform( const Imath::M44f &transform ) override;
 		void transform( const std::vector<Imath::M44f> &samples, const std::vector<float> &times ) override;
-		bool attributes( const IECoreScenePreview::Renderer::AttributesInterface *attributes ) override;
-		void link( const IECore::InternedString &type, const IECoreScenePreview::Renderer::ConstObjectSetPtr &objects ) override;
-		void assignID( uint32_t id ) override;
-		void assignInstanceID( uint32_t id ) override;
 
-	protected :
+	private :
 
-		const Session *m_session;
-		LightLinker *m_lightLinker;
-		riley::GeometryInstanceId m_geometryInstance;
-		/// Used to keep material etc alive as long as we need it.
-		ConstAttributesPtr m_attributes;
-		/// Used to keep geometry prototype alive as long as we need it.
-		ConstGeometryPrototypePtr m_geometryPrototype;
-		RtParamList m_extraAttributes;
-		IECoreScenePreview::Renderer::ConstObjectSetPtr m_linkedLights;
-		IECoreScenePreview::Renderer::ConstObjectSetPtr m_shadowedLights;
+		void fixupTransformEdit( riley::GeometryInstanceResult editResult );
+
+		RtPrimVarList m_primVars;
 
 };
 

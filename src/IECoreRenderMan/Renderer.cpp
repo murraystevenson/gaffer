@@ -48,8 +48,11 @@
 #include "ParamListAlgo.h"
 #include "Session.h"
 #include "Transform.h"
+#include "Volume.h"
 
 #include "GafferScene/Private/IECoreScenePreview/Renderer.h"
+
+#include "IECoreVDB/VDBObject.h"
 
 #include "IECoreScene/MeshPrimitive.h"
 
@@ -184,7 +187,14 @@ class RenderManRenderer final : public IECoreScenePreview::Renderer
 				return nullptr;
 			}
 
-			return new IECoreRenderMan::Object( name, geometryPrototype, typedAttributes, m_lightLinker.get(), m_session );
+			if( auto vdbObject = IECore::runTimeCast<const IECoreVDB::VDBObject>( object ) )
+			{
+				return new IECoreRenderMan::Volume( name, geometryPrototype, typedAttributes, m_lightLinker.get(), m_session, vdbObject );
+			}
+			else
+			{
+				return new IECoreRenderMan::Object( name, geometryPrototype, typedAttributes, m_lightLinker.get(), m_session );
+			}
 		}
 
 		ObjectInterfacePtr object( const std::string &name, const std::vector<const IECore::Object *> &samples, const std::vector<float> &times, const AttributesInterface *attributes ) override
