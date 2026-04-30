@@ -95,6 +95,7 @@ if os.environ.get( "GAFFERRENDERMAN_HIDE_UI", "" ) != "1" :
 
 			( "RenderMan Surface", "ri:surface" ),
 			( "RenderMan Light", "ri:light" ),
+			( "RenderMan Light Filter", "ri:lightFilter" ),
 
 		] )
 
