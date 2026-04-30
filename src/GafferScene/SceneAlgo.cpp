@@ -699,39 +699,29 @@ void addLocaliseAttributesPredecessors( const SceneAlgo::History::Predecessors &
 {
 	// No need to check if the node is filtered to this location.
 	// Filtered or unfiltered, it's all the same : the predecessor
-	// we want is the most local one. i.e. the one with the longest
+	// we want is the most local one. i.e. the one with a value and
+	// the longest path. If none have a value, then we take the longest
 	// path.
 
-	int longestPath = -1;
+	using Priority = std::tuple<bool, int>;
+	Priority highestPriority = { false, -1 };
 	SceneAlgo::AttributeHistory::Ptr predecessor;
 	for( auto &h : source )
 	{
-		const auto &sourcePath = h->context->get<ScenePlug::ScenePath>( ScenePlug::scenePathContextName );
-		if( (int)sourcePath.size() <= longestPath )
-		{
-			continue;
-		}
 		auto p = attributeHistory( h.get(), destination->attributeName );
-		if( p && p->attributeValue )
+		const auto &sourcePath = h->context->get<ScenePlug::ScenePath>( ScenePlug::scenePathContextName );
+		const Priority priority = { (bool)p->attributeValue, sourcePath.size() };
+		if( priority > highestPriority )
 		{
 			predecessor = p;
-			longestPath = sourcePath.size();
+			highestPriority = priority;
 		}
 	}
 
-	if( !predecessor )
+	if( predecessor )
 	{
-		if( !source.size() )
-		{
-			return;
-		}
-		// We didn't find a source with an attribute to localise. Add the first
-		// source as a predecessor so the history is not truncated.
-		predecessor = attributeHistory( source[0].get(), destination->attributeName );
+		destination->predecessors.push_back( predecessor );
 	}
-
-	assert( predecessor );
-	destination->predecessors.push_back( predecessor );
 }
 
 void addAttributeTweaksPredecessors( const AttributeTweaks *attributeTweaks, const SceneAlgo::History::Predecessors &source, SceneAlgo::AttributeHistory *destination )
@@ -771,25 +761,16 @@ void addMergeScenesPredecessors( const MergeScenes *mergeScenes, const SceneAlgo
 	for( auto &h : source )
 	{
 		auto p = attributeHistory( h.get(), destination->attributeName );
-		if( p && p->attributeValue )
+		if( !predecessor || p->attributeValue )
 		{
 			predecessor = p;
 		}
 	}
 
-	if( !predecessor )
+	if( predecessor )
 	{
-		if( !source.size() )
-		{
-			return;
-		}
-		// We didn't find a source with an attribute to merge. Add the first
-		// source as a predecessor so the history is not truncated.
-		predecessor = attributeHistory( source[0].get(), destination->attributeName );
+		destination->predecessors.push_back( predecessor );
 	}
-
-	assert( predecessor );
-	destination->predecessors.push_back( predecessor );
 }
 
 void addMergeScenesPredecessors( const MergeScenes *mergeScenes, const SceneAlgo::History::Predecessors &source, SceneAlgo::OptionHistory *destination )
@@ -801,25 +782,16 @@ void addMergeScenesPredecessors( const MergeScenes *mergeScenes, const SceneAlgo
 	for( auto &h : source )
 	{
 		auto p = optionHistory( h.get(), destination->optionName );
-		if( p && p->optionValue )
+		if( !predecessor || p->optionValue )
 		{
 			predecessor = p;
 		}
 	}
 
-	if( !predecessor )
+	if( predecessor )
 	{
-		if( !source.size() )
-		{
-			return;
-		}
-		// We didn't find a source with an option to merge. Add the first
-		// source as a predecessor so the history is not truncated.
-		predecessor = optionHistory( source[0].get(), destination->optionName );
+		destination->predecessors.push_back( predecessor );
 	}
-
-	assert( predecessor );
-	destination->predecessors.push_back( predecessor );
 }
 
 void addMergeScenesPredecessors( const MergeScenes *mergeScenes, const SceneAlgo::History::Predecessors &source, SceneAlgo::PrimitiveVariableHistory *destination )
@@ -1241,7 +1213,7 @@ ShaderTweaks *SceneAlgo::shaderTweaks( const ScenePlug *scene, const ScenePlug::
 	{
 		History::ConstPtr h = history( scene->attributesPlug(), inheritancePath );
 		auto ah = attributeHistory( h.get(), attributeName );
-		if( ah && ah->attributeValue )
+		if( ah->attributeValue )
 		{
 			return shaderTweaksWalk( ah.get() );
 		}
