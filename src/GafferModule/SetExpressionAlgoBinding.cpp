@@ -53,11 +53,11 @@ struct SetProviderWrapper : Gaffer::SetExpressionAlgo::SetProvider, wrapper<Gaff
 	{
 		IECorePython::ScopedGILLock gilLock;
 		object result = this->get_override( "setNames" )();
-		extract<IECore::InternedStringVectorData *> e( result );
+		extract<IECore::ObjectPtr> e( result );
 
 		if( e.check() )
 		{
-			return IECore::ConstInternedStringVectorDataPtr( e() );
+			return IECore::runTimeCast<const IECore::InternedStringVectorData>( e() );
 		}
 		else
 		{
