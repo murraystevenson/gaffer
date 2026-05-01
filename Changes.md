@@ -4,10 +4,17 @@
 Improvements
 ------------
 
+- USDLight : Added icon indicating which renderer a renderer-specific parameter applies to and removed the renderer text from the plug label.
+
+API
+---
 - ShaderTweaks, ShaderQuery : Added `RenderMan Light Filter` preset for the `shader` plug.
 - LightEditor :
   - Added columns for RenderMan-specific parameters on USD lights.
   - Added columns for RenderMan light filters.
+- LabelPlugValueWidget :
+  - Added support for icons and icon toolTips on plug names using `labelPlugValueWidget:icon` and `labelPlugValueWidget:iconToolTip` metadata, respectively.
+  - Added `setFixedWidth()` method.
 
 Fixes
 -----
