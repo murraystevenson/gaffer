@@ -247,5 +247,32 @@ class BasicInspectorTest( GafferUITest.TestCase ) :
 		assertExpectedSource( script["editScope"]["in"], "beforeEditScope", script["primitiveVariables1"]["out"]["object"], SourceType.Other )
 		assertExpectedSource( script["editScope"]["in"], "beforeEditScope", script["primitiveVariables1"]["out"]["object"], SourceType.Upstream, editScope = script["editScope"] )
 
+	def testCancellation( self ) :
+
+		cube = GafferScene.Cube()
+
+		inspector = GafferSceneUI.Private.BasicInspector( cube["out"]["object"], None, lambda objectPlug : objectPlug.getValue() )
+
+		context = Gaffer.Context()
+		context["scene:path"] = GafferScene.ScenePlug.stringToPath( "/cube" )
+
+		canceller = IECore.Canceller()
+		canceller.cancel()
+
+		# This will detect the cancellation in `SceneAlgo::history()`.
+		with Gaffer.Context( context, canceller ) :
+			with self.assertRaises( IECore.Cancelled ) :
+				inspector.inspect()
+
+		# This will cache the results of `SceneAlgo::history()`.
+		with context :
+			inspector.inspect()
+
+		# So this will need to detect the cancellation in the Inspector's
+		# own logic.
+		with Gaffer.Context( context, canceller ) :
+			with self.assertRaises( IECore.Cancelled ) :
+				inspector.inspect()
+
 if __name__ == "__main__":
 	unittest.main()

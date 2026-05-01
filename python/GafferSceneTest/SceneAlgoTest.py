@@ -36,6 +36,7 @@
 
 import imath
 import inspect
+import time
 import unittest
 
 import IECore
@@ -1722,6 +1723,56 @@ class SceneAlgoTest( GafferSceneTest.SceneTestCase ) :
 		self.__assertAttributeHistory( attributeHistory, [ 0, 0, 0 ], deleteAttributes["in"], "/light", "gl:visualiser:scale", IECore.FloatData( 2.0 ), 1 )
 		self.__assertAttributeHistory( attributeHistory, [ 0, 0, 0, 0 ], testLight["out"], "/light", "gl:visualiser:scale", IECore.FloatData( 2.0 ), 0 )
 
+	def testAttributeHistoryScaling( self ) :
+
+		plane = GafferScene.Plane()
+
+		for nodeType in ( GafferScene.CustomAttributes, GafferScene.LocaliseAttributes, GafferScene.MergeScenes ) :
+
+			with self.subTest( nodeType = nodeType ) :
+
+				out = plane["out"]
+				nodes = []
+				for i in range( 0, 300 ) :
+					nodes.append( nodeType() )
+					# Connect to `in` or `in[0]`.
+					next( GafferScene.ScenePlug.RecursiveInputRange( nodes[-1] ) ).setInput( out )
+					out = nodes[-1]["out"]
+
+				history = GafferScene.SceneAlgo.history( out["attributes"], "/plane" )
+				t = time.perf_counter()
+				GafferScene.SceneAlgo.attributeHistory( history, "scene:visible" )
+				# We actually expect this to return immediately - the limit of 1s
+				# is just in case we hit a CI machine under load. The bug this
+				# test case is protecting against meant that the test wouldn't return
+				# in any kind of practical time at all.
+				self.assertLess( time.perf_counter() - t, 1 )
+
+	def testOptionHistoryScaling( self ) :
+
+		plane = GafferScene.Plane()
+
+		for nodeType in ( GafferScene.CustomOptions, GafferScene.MergeScenes ) :
+
+			with self.subTest( nodeType = nodeType ) :
+
+				out = plane["out"]
+				nodes = []
+				for i in range( 0, 300 ) :
+					nodes.append( nodeType() )
+					# Connect to `in` or `in[0]`.
+					next( GafferScene.ScenePlug.RecursiveInputRange( nodes[-1] ) ).setInput( out )
+					out = nodes[-1]["out"]
+
+				history = GafferScene.SceneAlgo.history( out["globals"] )
+				t = time.perf_counter()
+				GafferScene.SceneAlgo.optionHistory( history, "render:defaultRenderer" )
+				# We actually expect this to return immediately - the limit of 1s
+				# is just in case we hit a CI machine under load. The bug this
+				# test case is protecting against meant that the test wouldn't return
+				# in any kind of practical time at all.
+				self.assertLess( time.perf_counter() - t, 1 )
+
 	def testOptionHistory( self ) :
 
 		# Build network
@@ -2090,7 +2141,18 @@ class SceneAlgoTest( GafferSceneTest.SceneTestCase ) :
 		self.assertEqual( len( history.predecessors ), 1 )
 		self.assertEqual( history.predecessors[0].scene, script["dot"]["in"] )
 
-	def testHistoryWithCanceller( self ) :
+	def testHistoryCancellation( self ) :
+
+		plane = GafferScene.Plane()
+
+		context = Gaffer.Context()
+		canceller = IECore.Canceller()
+		canceller.cancel()
+		with Gaffer.Context( context, canceller ) :
+			with self.assertRaises( IECore.Cancelled ) :
+				GafferScene.SceneAlgo.history( plane["out"]["object"], "/plane" )
+
+	def testHistoryOmitsCanceller( self ) :
 
 		plane = GafferScene.Plane()
 		group = GafferScene.Group()
@@ -2114,6 +2176,17 @@ class SceneAlgoTest( GafferSceneTest.SceneTestCase ) :
 			history = GafferScene.SceneAlgo.history( shaderAssignment["in"]["attributes"], "/" )
 
 		assertNoCanceller( history )
+
+	def testAttributeHistoryCancellation( self ) :
+
+		light = GafferSceneTest.TestLight()
+		attributesHistory = GafferScene.SceneAlgo.history( light["out"]["attributes"], "/light" )
+
+		canceller = IECore.Canceller()
+		canceller.cancel()
+
+		with self.assertRaises( IECore.Cancelled ) :
+			GafferScene.SceneAlgo.attributeHistory( attributesHistory, "light", canceller )
 
 	@GafferTest.TestRunner.PerformanceTestMethod()
 	def testHistoryDiamondPerformance( self ) :
