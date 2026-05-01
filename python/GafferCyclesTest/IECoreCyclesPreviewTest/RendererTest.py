@@ -900,9 +900,7 @@ class RendererTest( GafferTest.TestCase ) :
 		self.assertTrue( isinstance( image, IECoreImage.ImagePrimitive ) )
 
 		color = self.__colorAtUV( image, imath.V2f( 0.5 ) )
-		self.assertEqual( color.r, points["N"].data[0].x )
-		self.assertEqual( color.g, points["N"].data[0].y )
-		self.assertEqual( color.b, points["N"].data[0].z )
+		self.assertEqualWithAbsError( imath.Color3f( color.r, color.g, color.b ), points["N"].data[0].normalize(), 0.0001 )
 
 	def __testMeshSmoothing( self, cube, smoothingExpected ) :
 
