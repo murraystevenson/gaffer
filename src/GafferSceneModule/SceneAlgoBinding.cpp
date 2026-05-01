@@ -276,10 +276,10 @@ void attributeHistorySetAttributeValue( SceneAlgo::AttributeHistory &h, ConstObj
 	h.attributeValue = v;
 }
 
-SceneAlgo::AttributeHistory::Ptr attributeHistoryWrapper( const SceneAlgo::History &attributesHistory, const InternedString &attributeName )
+SceneAlgo::AttributeHistory::Ptr attributeHistoryWrapper( const SceneAlgo::History &attributesHistory, const InternedString &attributeName, const IECore::Canceller *canceller )
 {
 	IECorePython::ScopedGILRelease r;
-	return SceneAlgo::attributeHistory( &attributesHistory, attributeName );
+	return SceneAlgo::attributeHistory( &attributesHistory, attributeName, canceller );
 }
 
 std::string optionHistoryGetOptionName( const SceneAlgo::OptionHistory &h )
@@ -503,7 +503,7 @@ void bindSceneAlgo()
 		.add_property( "attributeValue", &attributeHistoryGetAttributeValue, &attributeHistorySetAttributeValue )
 	;
 
-	def( "attributeHistory", &attributeHistoryWrapper );
+	def( "attributeHistory", &attributeHistoryWrapper, ( arg( "attributesHistory"), arg( "attribute" ), arg( "canceller" ) = object() ) );
 
 	IECorePython::RefCountedClass<SceneAlgo::OptionHistory, SceneAlgo::History>( "OptionHistory" )
 		.add_property( "optionName", &optionHistoryGetOptionName, &optionHistorySetOptionName )

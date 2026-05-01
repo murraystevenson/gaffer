@@ -10,7 +10,9 @@ Fixes
 -----
 
 - RenderMan : Fixed interactive edits to volume transforms.
-- Scene Editors : Fixed performance regression introduced in 1.6.15.0. This could significantly affect refresh times for certain scenes.
+- Scene Editors :
+  - Fixed performance regression introduced in 1.6.15.0. This could significantly affect refresh times for certain scenes.
+  - Improved cancellation responsiveness (where edits made to the node graph require that all background computation is stopped).
 
 API
 ---

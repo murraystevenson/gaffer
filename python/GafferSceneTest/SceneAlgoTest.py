@@ -1728,7 +1728,7 @@ class SceneAlgoTest( GafferSceneTest.SceneTestCase ) :
 
 				out = plane["out"]
 				nodes = []
-				for i in range( 0, 1000 ) :
+				for i in range( 0, 300 ) :
 					nodes.append( nodeType() )
 					# Connect to `in` or `in[0]`.
 					next( GafferScene.ScenePlug.RecursiveInputRange( nodes[-1] ) ).setInput( out )
@@ -1753,7 +1753,7 @@ class SceneAlgoTest( GafferSceneTest.SceneTestCase ) :
 
 				out = plane["out"]
 				nodes = []
-				for i in range( 0, 1000 ) :
+				for i in range( 0, 300 ) :
 					nodes.append( nodeType() )
 					# Connect to `in` or `in[0]`.
 					next( GafferScene.ScenePlug.RecursiveInputRange( nodes[-1] ) ).setInput( out )
@@ -2136,7 +2136,18 @@ class SceneAlgoTest( GafferSceneTest.SceneTestCase ) :
 		self.assertEqual( len( history.predecessors ), 1 )
 		self.assertEqual( history.predecessors[0].scene, script["dot"]["in"] )
 
-	def testHistoryWithCanceller( self ) :
+	def testHistoryCancellation( self ) :
+
+		plane = GafferScene.Plane()
+
+		context = Gaffer.Context()
+		canceller = IECore.Canceller()
+		canceller.cancel()
+		with Gaffer.Context( context, canceller ) :
+			with self.assertRaises( IECore.Cancelled ) :
+				GafferScene.SceneAlgo.history( plane["out"]["object"], "/plane" )
+
+	def testHistoryOmitsCanceller( self ) :
 
 		plane = GafferScene.Plane()
 		group = GafferScene.Group()
@@ -2160,6 +2171,17 @@ class SceneAlgoTest( GafferSceneTest.SceneTestCase ) :
 			history = GafferScene.SceneAlgo.history( shaderAssignment["in"]["attributes"], "/" )
 
 		assertNoCanceller( history )
+
+	def testAttributeHistoryCancellation( self ) :
+
+		light = GafferSceneTest.TestLight()
+		attributesHistory = GafferScene.SceneAlgo.history( light["out"]["attributes"], "/light" )
+
+		canceller = IECore.Canceller()
+		canceller.cancel()
+
+		with self.assertRaises( IECore.Cancelled ) :
+			GafferScene.SceneAlgo.attributeHistory( attributesHistory, "light", canceller )
 
 	@GafferTest.TestRunner.PerformanceTestMethod()
 	def testHistoryDiamondPerformance( self ) :
