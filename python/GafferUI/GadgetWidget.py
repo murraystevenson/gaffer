@@ -218,6 +218,11 @@ class GadgetWidget( GafferUI.GLWidget ) :
 
 	def __buttonDoubleClick( self, widget, event ) :
 
+		# We get given button double clicks before they're given to the overlay items,
+		# so we must ignore them so they can be used by the overlay.
+		if self._qtWidget().itemAt( event.line.p0.x, event.line.p0.y ) is not None :
+			return False
+
 		if not self._makeCurrent() :
 			return False
 
