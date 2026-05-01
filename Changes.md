@@ -6,6 +6,12 @@ Improvements
 
 - USDLight : Added icon indicating which renderer a renderer-specific parameter applies to and removed the renderer text from the plug label.
 
+Fixes
+-----
+
+- RenderMan : Fixed interactive edits to volume transforms.
+- Scene Editors : Fixed performance regression introduced in 1.6.15.0. This could significantly affect refresh times for certain scenes.
+
 API
 ---
 - ShaderTweaks, ShaderQuery : Added `RenderMan Light Filter` preset for the `shader` plug.
@@ -15,12 +21,6 @@ API
 - LabelPlugValueWidget :
   - Added support for icons and icon toolTips on plug names using `labelPlugValueWidget:icon` and `labelPlugValueWidget:iconToolTip` metadata, respectively.
   - Added `setFixedWidth()` method.
-
-Fixes
------
-
-- RenderMan : Fixed interactive edits to volume transforms.
-- Scene Editors : Fixed performance regression introduced in 1.6.15.0. This could significantly affect refresh times for certain scenes.
 
 1.6.17.0 (relative to 1.6.16.0)
 ========
