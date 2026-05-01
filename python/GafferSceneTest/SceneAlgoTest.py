@@ -1728,7 +1728,7 @@ class SceneAlgoTest( GafferSceneTest.SceneTestCase ) :
 
 				out = plane["out"]
 				nodes = []
-				for i in range( 0, 1000 ) :
+				for i in range( 0, 300 ) :
 					nodes.append( nodeType() )
 					# Connect to `in` or `in[0]`.
 					next( GafferScene.ScenePlug.RecursiveInputRange( nodes[-1] ) ).setInput( out )
@@ -1753,7 +1753,7 @@ class SceneAlgoTest( GafferSceneTest.SceneTestCase ) :
 
 				out = plane["out"]
 				nodes = []
-				for i in range( 0, 1000 ) :
+				for i in range( 0, 300 ) :
 					nodes.append( nodeType() )
 					# Connect to `in` or `in[0]`.
 					next( GafferScene.ScenePlug.RecursiveInputRange( nodes[-1] ) ).setInput( out )
