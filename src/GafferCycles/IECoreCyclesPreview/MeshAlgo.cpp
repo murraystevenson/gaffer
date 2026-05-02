@@ -115,23 +115,22 @@ ccl::Mesh *convertPrimary( const IECoreScene::MeshPrimitive *mesh, ccl::Scene *s
 
 	// Convert topology and points
 
+	const size_t numFaces = mesh->numFaces();
+	const V3fVectorData *p = mesh->variableData<V3fVectorData>( "P", PrimitiveVariable::Vertex );
+	const vector<Imath::V3f> &points = p->readable();
+	const vector<int> &vertexIds = mesh->vertexIds()->readable();
+	const size_t numVerts = points.size();
+
 	ccl::Mesh *cmesh = SceneAlgo::createNodeWithLock<ccl::Mesh>( scene );
+	cmesh->reserve_mesh( numVerts, numFaces );
+	for( size_t i = 0; i < numVerts; i++ )
+	{
+		cmesh->add_vertex( ccl::make_float3( points[i].x, points[i].y, points[i].z ) );
+	}
 
 	if( mesh->interpolation() == "catmullClark" )
 	{
 		cmesh->set_subdivision_type( ccl::Mesh::SUBDIVISION_CATMULL_CLARK );
-
-		const size_t numFaces = mesh->numFaces();
-		const V3fVectorData *p = mesh->variableData<V3fVectorData>( "P", PrimitiveVariable::Vertex );
-		const vector<Imath::V3f> &points = p->readable();
-		const vector<int> &vertexIds = mesh->vertexIds()->readable();
-		const size_t numVerts = points.size();
-
-		cmesh->reserve_mesh( numVerts, numFaces );
-		for( size_t i = 0; i < numVerts; i++ )
-		{
-			cmesh->add_vertex( ccl::make_float3( points[i].x, points[i].y, points[i].z ) );
-		}
 
 		const std::vector<int> &vertsPerFace = mesh->verticesPerFace()->readable();
 		size_t ncorners = 0;
@@ -187,19 +186,6 @@ ccl::Mesh *convertPrimary( const IECoreScene::MeshPrimitive *mesh, ccl::Scene *s
 	}
 	else
 	{
-		const V3fVectorData *p = mesh->variableData<V3fVectorData>( "P", PrimitiveVariable::Vertex );
-		const vector<Imath::V3f> &points = p->readable();
-		const size_t numVerts = points.size();
-		const std::vector<int> &vertexIds = mesh->vertexIds()->readable();
-
-		const size_t numFaces = mesh->numFaces();
-		cmesh->reserve_mesh( numVerts, numFaces );
-
-		for( size_t i = 0; i < numVerts; i++ )
-		{
-			cmesh->add_vertex( ccl::make_float3( points[i].x, points[i].y, points[i].z ) );
-		}
-
 		const bool smooth = hasSmoothNormals( mesh );
 		for( size_t i = 0; i < vertexIds.size(); i+= 3 )
 		{
