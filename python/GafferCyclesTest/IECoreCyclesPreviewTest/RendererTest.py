@@ -3071,5 +3071,34 @@ class RendererTest( GafferTest.TestCase ) :
 					del object
 					del renderer
 
+	def testPointlessPrimitives( self ) :
+
+		pointlessMesh = IECoreScene.MeshPrimitive.createPlane( imath.Box2f( imath.V2f( -1 ), imath.V2f( 1 ) ) )
+		del pointlessMesh["P"]
+
+		for primitive in (
+			pointlessMesh,
+			IECoreScene.PointsPrimitive( 10 ),
+			IECoreScene.CurvesPrimitive( IECore.IntVectorData( [ 4 ] ) ),
+		) :
+			primitiveType = primitive.typeName()
+			with self.subTest( primitiveType = primitiveType ) :
+
+				renderer = self.createRenderer( GafferScene.Private.IECoreScenePreview.Renderer.RenderType.Interactive )
+
+				with IECore.CapturingMessageHandler() as mh :
+
+					objectInterface = renderer.object(
+						"/pointless", primitive,
+						renderer.attributes( IECore.CompoundObject() )
+					)
+
+					self.assertEqual( len( mh.messages ), 1 )
+					self.assertEqual( mh.messages[0].level, IECore.Msg.Level.Warning )
+					self.assertEqual( mh.messages[0].message, f'{primitiveType} does not have "P" primitive variable of interpolation type Vertex.' )
+
+				del objectInterface
+				del renderer
+
 if __name__ == "__main__":
 	unittest.main()
