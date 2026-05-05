@@ -1,6 +1,11 @@
 1.6.x.x (relative to 1.6.18.0)
 =======
 
+Fixes
+-----
+
+- SceneInspector : Fixed crash caused by a particular configuration of ShuffleAttributes or ShufflePrimitiveVariables nodes (#6923).
+
 1.6.18.0 (relative to 1.6.17.0)
 ========
 
