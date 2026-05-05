@@ -336,6 +336,9 @@ class _EventFilter( QtCore.QObject ) :
 			widget = GafferUI.Widget._owner( qObject )
 			assert( isinstance( widget, GadgetWidget ) )
 
+			if qObject.itemAt( qEvent.x(), qEvent.y() ) is not None :
+				return False
+
 			if not widget._makeCurrent() :
 				return False
 
