@@ -691,8 +691,11 @@ void addShuffleAttributesPredecessors( const ShuffleAttributes *shuffleAttribute
 		sourceAttributeName = shuffledNames[destination->attributeName];
 	}
 
-	assert( source.size() == 1 );
-	destination->predecessors.push_back( SceneAlgo::attributeHistory( source[0].get(), sourceAttributeName, canceller ) );
+	if( source.size() )
+	{
+		assert( source.size() == 1 );
+		destination->predecessors.push_back( SceneAlgo::attributeHistory( source[0].get(), sourceAttributeName, canceller ) );
+	}
 }
 
 void addLocaliseAttributesPredecessors( const SceneAlgo::History::Predecessors &source, SceneAlgo::AttributeHistory *destination, const IECore::Canceller *canceller )
@@ -906,10 +909,12 @@ void addShufflePrimitiveVariablesPredecessors( const ShufflePrimitiveVariables *
 		}
 	}
 
-	assert( source.size() == 1 );
-	destination->predecessors.push_back( SceneAlgo::primitiveVariableHistory( source[0].get(), sourcePrimitiveVariableName ) );
+	if( source.size() )
+	{
+		assert( source.size() == 1 );
+		destination->predecessors.push_back( SceneAlgo::primitiveVariableHistory( source[0].get(), sourcePrimitiveVariableName ) );
+	}
 }
-
 
 SceneProcessor *objectTweaksWalk( const SceneAlgo::History *h )
 {
