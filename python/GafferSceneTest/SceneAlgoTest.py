@@ -3226,6 +3226,76 @@ class SceneAlgoTest( GafferSceneTest.SceneTestCase ) :
 
 		self.assertEqual( gathered, [] )
 
+	def testIssue6923( self ) :
+
+		cube = GafferScene.Cube()
+
+		cubeFilter = GafferScene.PathFilter()
+		cubeFilter["paths"].setValue( IECore.StringVectorData( [ "/cube" ] ) )
+
+		shuffleAttributes = GafferScene.ShuffleAttributes()
+		shuffleAttributes["in"].setInput( cube["out"] )
+		shuffleAttributes["filter"].setInput( cubeFilter["out"] )
+
+		customAttributes = GafferScene.CustomAttributes()
+		customAttributes["in"].setInput( shuffleAttributes["out"] )
+		customAttributes["filter"].setInput( cubeFilter["out"] )
+		customAttributes["attributes"].addChild( Gaffer.NameValuePlug( "foo", 1 ) )
+
+		copyAttributes = GafferScene.CopyAttributes()
+		copyAttributes["in"].setInput( cube["out"] )
+		copyAttributes["source"].setInput( customAttributes["out"] )
+		copyAttributes["filter"].setInput( cubeFilter["out"] )
+
+		attributesHistory = GafferScene.SceneAlgo.history( copyAttributes["out"]["attributes"], "/cube" )
+		attributeHistory = GafferScene.SceneAlgo.attributeHistory( attributesHistory, "foo" )
+
+		self.__assertAttributeHistory( attributeHistory, [], copyAttributes["out"], "/cube", "foo", IECore.IntData( 1 ), 1 )
+		self.__assertAttributeHistory( attributeHistory, [ 0 ], copyAttributes["source"], "/cube", "foo", IECore.IntData( 1 ), 1 )
+		self.__assertAttributeHistory( attributeHistory, [ 0, 0 ], customAttributes["out"], "/cube", "foo", IECore.IntData( 1 ), 1 )
+		self.__assertAttributeHistory( attributeHistory, [ 0, 0, 0 ], customAttributes["in"], "/cube", "foo", None, 1 )
+		# Ideally the history would continue to `shuffleAttributes["in"]` and `cube["out"]` after this, but that
+		# part of the history is lost due to `cube["out"]` being cached by the `copyAttributes["in"]` branch.
+		# See todo in `CapturingMonitor::forceMonitoring()`.
+		self.__assertAttributeHistory( attributeHistory, [ 0, 0, 0, 0 ], shuffleAttributes["out"], "/cube", "foo", None, 0 )
+
+	def testIssue6923ForPrimitiveVariables( self ) :
+
+		cube = GafferScene.Cube()
+
+		cubeFilter = GafferScene.PathFilter()
+		cubeFilter["paths"].setValue( IECore.StringVectorData( [ "/cube" ] ) )
+
+		shufflePrimitiveVariables = GafferScene.ShufflePrimitiveVariables()
+		shufflePrimitiveVariables["in"].setInput( cube["out"] )
+		shufflePrimitiveVariables["filter"].setInput( cubeFilter["out"] )
+
+		primitiveVariables = GafferScene.PrimitiveVariables()
+		primitiveVariables["in"].setInput( shufflePrimitiveVariables["out"] )
+		primitiveVariables["filter"].setInput( cubeFilter["out"] )
+		primitiveVariables["primitiveVariables"].addChild( Gaffer.NameValuePlug( "foo", 1 ) )
+
+		copyPrimitiveVariables = GafferScene.CopyPrimitiveVariables()
+		copyPrimitiveVariables["in"].setInput( cube["out"] )
+		copyPrimitiveVariables["source"].setInput( primitiveVariables["out"] )
+		copyPrimitiveVariables["primitiveVariables"].setValue( "foo" )
+		copyPrimitiveVariables["filter"].setInput( cubeFilter["out"] )
+
+		objectHistory = GafferScene.SceneAlgo.history( copyPrimitiveVariables["out"]["object"], "/cube" )
+		primitiveVariableHistory = GafferScene.SceneAlgo.primitiveVariableHistory( objectHistory, "foo" )
+
+		primitiveVariable = copyPrimitiveVariables["out"].object( "/cube" )["foo"]
+		emptyPrimitiveVariable = IECoreScene.PrimitiveVariable( IECoreScene.PrimitiveVariable.Interpolation.Invalid, None )
+
+		self.__assertPrimitiveVariableHistory( primitiveVariableHistory, [], copyPrimitiveVariables["out"], "/cube", "foo", primitiveVariable, 1 )
+		self.__assertPrimitiveVariableHistory( primitiveVariableHistory, [ 0 ], copyPrimitiveVariables["source"], "/cube", "foo", primitiveVariable, 1 )
+		self.__assertPrimitiveVariableHistory( primitiveVariableHistory, [ 0, 0 ], primitiveVariables["out"], "/cube", "foo", primitiveVariable, 1 )
+		self.__assertPrimitiveVariableHistory( primitiveVariableHistory, [ 0, 0, 0 ], primitiveVariables["in"], "/cube", "foo", emptyPrimitiveVariable, 1 )
+		# Ideally the history would continue to `shufflePrimitiveVariables["in"]` and `cube["out"]` after this, but that
+		# part of the history is lost due to `cube["out"]` being cached by the `copyPrimitiveVariables["in"]` branch.
+		# See todo in `CapturingMonitor::forceMonitoring()`.
+		self.__assertPrimitiveVariableHistory( primitiveVariableHistory, [ 0, 0, 0, 0 ], shufflePrimitiveVariables["out"], "/cube", "foo", emptyPrimitiveVariable, 0 )
+
 	def tearDown( self ) :
 
 		GafferSceneTest.SceneTestCase.tearDown( self )
