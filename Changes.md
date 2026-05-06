@@ -40,6 +40,7 @@ Fixes
 - Cycles :
   - Reduced memory usage when rendering a single segment of deformation blur on CPU devices.
   - Fixed PointsPrimitive motion blur when rendering with even numbers of segments.
+  - Fixed translation of Uniform `N` primitive variables, these are now resampled to FaceVarying.
 - USDShader : Fixed value of `type` plug after loading a USDLux light.
 - CyclesLight, ArnoldLight, LightFilter : Fixed potential hang when loading shaders (GIL management bug in `loadShader()` binding).
 - StandardNodeGadget : Fixed crash caused by the node emitting `errorSignal()` while the gadget is undergoing construction.

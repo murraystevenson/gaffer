@@ -66,7 +66,8 @@ namespace
 // - Cycles meshes store vertex normals as ("N", ATTR_STD_VERTEX_NORMAL)
 // - If we don't specify vertex normals, they are computed for us
 //   and added to the mesh by Cycles itself by `Mesh::add_vertex_normals()`
-// - Face normals are computed on demand in the Cycles kernel.
+// - Face normals are always computed on demand in the Cycles kernel, so we
+//   resample custom uniform normals to face-varying.
 // - Which normal is actually used for shading is determined on a
 //  triangle-by-triangle basis using the `smooth` flag passed
 //  to `Mesh::add_triangle()`.
@@ -215,6 +216,14 @@ ccl::Mesh *convertPrimary( const IECoreScene::MeshPrimitive *mesh, ccl::Scene *s
 		if( name == "P" )
 		{
 			// Converted above already
+			continue;
+		}
+		if( name == "N" && variable.interpolation == PrimitiveVariable::Uniform )
+		{
+			// Resample "N" to FaceVarying as Cycles doesn't accept custom uniform normals.
+			PrimitiveVariable resampledN = variable;
+			IECoreScene::MeshAlgo::resamplePrimitiveVariable( mesh, resampledN, PrimitiveVariable::FaceVarying );
+			GeometryAlgo::convertPrimitiveVariable( name, resampledN, attributes, ccl::ATTR_ELEMENT_CORNER );
 			continue;
 		}
 		switch( variable.interpolation )

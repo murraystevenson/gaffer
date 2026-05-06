@@ -977,6 +977,12 @@ class RendererTest( GafferTest.TestCase ) :
 		cube["N"] = IECoreScene.MeshAlgo.calculateVertexNormals( cube, IECoreScene.MeshAlgo.NormalWeighting.Equal )
 		self.__testMeshSmoothing( cube, smoothingExpected = True )
 
+	def testUniformMeshNormals( self ) :
+
+		cube = IECoreScene.MeshPrimitive.createBox( imath.Box3f( imath.V3f( -0.5 ), imath.V3f( 0.5 ) ) )
+		cube["N"] = IECoreScene.MeshAlgo.calculateUniformNormals( cube )
+		self.__testMeshSmoothing( cube, smoothingExpected = False )
+
 	def testUnsupportedMeshNormals( self ) :
 
 		renderer = self.createRenderer()
