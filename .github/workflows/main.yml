@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '*_maintenance'
+      - 'setExpressionAlgoWindowsDebug'
   pull_request:
     branches:
       - '*'
