@@ -38,7 +38,7 @@ Fixes
 - DeleteCurves : Fixed deletion of periodic curves.
 - ResamplePrimitiveVariables : Fixed resampling between Vertex and Varying for linear curves.
 - Cycles :
-  - Reduced memory usage when rendering a single segment of deformation blur on CPU devices.
+  - Reduced memory usage when rendering a single segment of deformation blur.
   - Fixed PointsPrimitive motion blur when rendering with even numbers of segments.
   - Fixed translation of Uniform `N` primitive variables, these are now resampled to FaceVarying.
 - USDShader : Fixed value of `type` plug after loading a USDLux light.

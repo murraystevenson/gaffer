@@ -38,7 +38,6 @@
 
 #include "IECoreScene/PrimitiveVariable.h"
 
-#include "IECore/ObjectInterpolator.h"
 #include "IECore/SimpleTypedData.h"
 
 IECORE_PUSH_DEFAULT_VISIBILITY
@@ -240,35 +239,11 @@ namespace IECoreCycles
 namespace GeometryAlgo
 {
 
-ccl::Geometry *convert( const IECoreScenePreview::Renderer::ObjectSamples &samples, const IECoreScenePreview::Renderer::SampleTimes &times, ccl::Session *session )
+ccl::Geometry *convert( const IECoreScenePreview::Renderer::ObjectSamples &samples, const IECoreScenePreview::Renderer::SampleTimes &times, ccl::Scene *scene )
 {
 	if( samples.empty() )
 	{
 		return nullptr;
-	}
-
-	if( samples.size() % 2 == 0 && session->device->info.type != ccl::DeviceType::DEVICE_CPU )
-	{
-		// Cycles requires an odd number of motion samples for some reason, although
-		// experimentally this only seems to be the case when using GPU devices.
-		// Make memory-wasting redundant samples to work around this. Samples are
-		// expected to be spaced evenly in time, so we have to insert a redundant sample
-		// in every gap.
-		IECoreScenePreview::Renderer::ObjectSamples processedSamples;
-		processedSamples.reserve( samples.size() * 2 - 1 );
-		IECoreScenePreview::Renderer::SampleTimes processedTimes;
-		processedTimes.reserve( samples.size() * 2 - 1 );
-		for( size_t i = 0; i < samples.size(); ++i )
-		{
-			processedSamples.push_back( samples[i] );
-			processedTimes.push_back( times[i] );
-			if( i + 1 < samples.size() )
-			{
-				processedSamples.push_back( linearObjectInterpolation( samples[i].get(), samples[i+1].get(), 0.5f ) );
-				processedTimes.push_back( Imath::lerp( times[i], times[i+1], 0.5f ) );
-			}
-		}
-		return convert( processedSamples, processedTimes, session );
 	}
 
 	const IECore::Object *firstSample = samples.front().get();
@@ -290,7 +265,7 @@ ccl::Geometry *convert( const IECoreScenePreview::Renderer::ObjectSamples &sampl
 	// Cycles expects the middle sample (rounding down for even numbers of
 	// samples) to be specified as the main sample, and the other samples to
 	// be provided via ATTR_STD_MOTION_VERTEX_POSITION.
-	return it->second( samples, times, (samples.size() - 1) / 2, session->scene.get() );
+	return it->second( samples, times, (samples.size() - 1) / 2, scene );
 }
 
 void registerConverter( IECore::TypeId fromType, Converter converter )
