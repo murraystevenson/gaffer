@@ -553,11 +553,7 @@ struct RemovalVisitor
 	{
 		std::vector<ExpressionAst> ops;
 		collectOperands( removalsAst, Union, ops );
-
-		for( auto &o : ops )
-		{
-			m_removals.insert( o );
-		}
+		m_removals.insert( ops.begin(), ops.end() );
 	}
 
 	ExpressionAst operator()( const std::string &s ) const
