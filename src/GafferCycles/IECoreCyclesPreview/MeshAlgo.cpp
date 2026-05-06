@@ -39,15 +39,10 @@
 #include "IECoreScene/MeshPrimitive.h"
 #include "IECoreScene/MeshAlgo.h"
 
-#include "IECore/Interpolator.h"
-#include "IECore/SimpleTypedData.h"
-
 // Cycles
 #include "kernel/types.h"
 #include "scene/geometry.h"
 #include "scene/mesh.h"
-#include "subd/dice.h"
-#include "util/param.h"
 #include "util/types.h"
 
 #include "fmt/format.h"
