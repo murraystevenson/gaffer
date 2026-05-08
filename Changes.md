@@ -111,18 +111,20 @@ Build
 - Imath : Updated to version 3.1.12.
 - Jemalloc : Removed when building on macOS.
 - LLVM : Updated to version 17.0.6.
+- MaterialX : Updated to version 1.39.4.
 - OpenColorIO :
   - Updated to version 2.4.2.
   - Added ACES 2.0 configs.
 - OpenEXR : Updated to version 3.3.6.
 - OpenShadingLanguage : Updated to version 1.14.8.0.
 - OpenSubdiv : Updated to version 3.6.1.
+- PyBind11 : Updated to version 2.13.6.
 - PySide : Updated to version 6.5.8.
 - Python : Updated to version 3.11.14.
 - Qt : Updated to version 6.5.8.
 - SSE2NEON : Added version 1.9.1 when building on macOS.
 - TBB : Updated to version 2021.13.0.
-- USD : Updated to version 26.03.
+- USD : Updated to version 26.05.
 
 1.6.x.x (relative to 1.6.18.0)
 =======
