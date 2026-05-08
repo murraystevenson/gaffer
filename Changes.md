@@ -4,7 +4,7 @@
 Features
 --------
 
-- Cycles : Updated to version 5.0.0.
+- Cycles : Updated to version 5.1.0.
 - CurvesInterpolation : Added node for modifying CurvesPrimitive `basis` and `wrap`. This includes the ability to convert curves with `Pinned` wrap to `NonPeriodic`, adding the appropriate "phantom" points to maintain curve shape.
 
 Improvements
@@ -38,8 +38,9 @@ Fixes
 - DeleteCurves : Fixed deletion of periodic curves.
 - ResamplePrimitiveVariables : Fixed resampling between Vertex and Varying for linear curves.
 - Cycles :
-  - Reduced memory usage when rendering a single segment of deformation blur on CPU devices.
+  - Reduced memory usage when rendering a single segment of deformation blur.
   - Fixed PointsPrimitive motion blur when rendering with even numbers of segments.
+  - Fixed translation of Uniform `N` primitive variables, these are now resampled to FaceVarying.
 - USDShader : Fixed value of `type` plug after loading a USDLux light.
 - CyclesLight, ArnoldLight, LightFilter : Fixed potential hang when loading shaders (GIL management bug in `loadShader()` binding).
 - StandardNodeGadget : Fixed crash caused by the node emitting `errorSignal()` while the gadget is undergoing construction.
@@ -103,7 +104,7 @@ Build
 
 - Boost : Updated to version 1.85.0.
 - Cortex : Updated to version 10.7.0.0a9.
-- Cycles : Updated to version 5.0.0.
+- Cycles : Updated to version 5.1.0.
 - Embree : Updated to version 4.4.0.
 - Imath : Updated to version 3.1.12.
 - Jemalloc : Removed when building on macOS.
@@ -117,6 +118,7 @@ Build
 - PySide : Updated to version 6.5.8.
 - Python : Updated to version 3.11.14.
 - Qt : Updated to version 6.5.8.
+- SSE2NEON : Added version 1.9.1 when building on macOS.
 - TBB : Updated to version 2021.13.0.
 - USD : Updated to version 26.03.
 

@@ -39,15 +39,10 @@
 #include "IECoreScene/MeshPrimitive.h"
 #include "IECoreScene/MeshAlgo.h"
 
-#include "IECore/Interpolator.h"
-#include "IECore/SimpleTypedData.h"
-
 // Cycles
 #include "kernel/types.h"
 #include "scene/geometry.h"
 #include "scene/mesh.h"
-#include "subd/dice.h"
-#include "util/param.h"
 #include "util/types.h"
 
 #include "fmt/format.h"
@@ -66,14 +61,18 @@ namespace
 // - Cycles meshes store vertex normals as ("N", ATTR_STD_VERTEX_NORMAL)
 // - If we don't specify vertex normals, they are computed for us
 //   and added to the mesh by Cycles itself by `Mesh::add_vertex_normals()`
-// - Face normals are computed on demand in the Cycles kernel.
+// - Face normals are always computed on demand in the Cycles kernel, so we
+//   resample custom uniform normals to face-varying.
 // - Which normal is actually used for shading is determined on a
 //  triangle-by-triangle basis using the `smooth` flag passed
 //  to `Mesh::add_triangle()`.
-// - Cycles does not support facevarying normals.
+// - Cycles as of 5.1 now supports face-varying normals as
+//  ("N", ATTR_STD_CORNER_NORMAL)
 //
 // Also see `GeometryAlgo::convertPrimitiveVariable()` where we handle the
-// tagging of normal attributes with ATTR_STD_VERTEX_NORMAL.
+// tagging of normal attributes with ATTR_STD_VERTEX_NORMAL or
+// ATTR_STD_CORNER_NORMAL. This also handles octahedral packing of normals
+// via the `ccl::packed_normal()` utility function.
 bool hasSmoothNormals( const IECoreScene::MeshPrimitive *mesh )
 {
 	auto it = mesh->variables.find( "N" );
@@ -87,12 +86,6 @@ bool hasSmoothNormals( const IECoreScene::MeshPrimitive *mesh )
 		case PrimitiveVariable::Constant :
 		case PrimitiveVariable::Uniform :
 			// These are definitely intended to be faceted.
-			return false;
-		case PrimitiveVariable::FaceVarying :
-			// Could be a mix of faceted and non-faceted triangles, including
-			// triangles with a mix of soft and hard edges, which aren't
-			// representable in Cycles. Plump for faceted, among other things
-			// because the native Cortex cube geometry has FaceVarying normals.
 			return false;
 		default :
 			return true;
@@ -218,6 +211,14 @@ ccl::Mesh *convertPrimary( const IECoreScene::MeshPrimitive *mesh, ccl::Scene *s
 		if( name == "P" )
 		{
 			// Converted above already
+			continue;
+		}
+		if( name == "N" && variable.interpolation == PrimitiveVariable::Uniform )
+		{
+			// Resample "N" to FaceVarying as Cycles doesn't accept custom uniform normals.
+			PrimitiveVariable resampledN = variable;
+			IECoreScene::MeshAlgo::resamplePrimitiveVariable( mesh, resampledN, PrimitiveVariable::FaceVarying );
+			GeometryAlgo::convertPrimitiveVariable( name, resampledN, attributes, ccl::ATTR_ELEMENT_CORNER );
 			continue;
 		}
 		switch( variable.interpolation )
