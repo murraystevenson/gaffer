@@ -530,6 +530,9 @@
 				"searchFieldBackground",
 				"search",
 				"searchOn",
+				"home",
+				"historyBack",
+				"historyForward",
 			],
 
 		},
