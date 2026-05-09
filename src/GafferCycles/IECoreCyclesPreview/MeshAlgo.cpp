@@ -96,6 +96,13 @@ ccl::Mesh *convertPrimary( const IECoreScene::MeshPrimitive *mesh, ccl::Scene *s
 {
 	assert( mesh->typeId() == IECoreScene::MeshPrimitive::staticTypeId() );
 
+	const V3fVectorData *p = mesh->variableData<V3fVectorData>( "P", PrimitiveVariable::Vertex );
+	if( !p )
+	{
+		msg( Msg::Warning, "IECoreCyles::MeshAlgo", "MeshPrimitive does not have \"P\" primitive variable of interpolation type Vertex." );
+		return nullptr;
+	}
+
 	// Triangulate if necessary
 
 	ConstMeshPrimitivePtr triangulatedMesh;
@@ -109,7 +116,6 @@ ccl::Mesh *convertPrimary( const IECoreScene::MeshPrimitive *mesh, ccl::Scene *s
 	// Convert topology and points
 
 	const size_t numFaces = mesh->numFaces();
-	const V3fVectorData *p = mesh->variableData<V3fVectorData>( "P", PrimitiveVariable::Vertex );
 	const vector<Imath::V3f> &points = p->readable();
 	const vector<int> &vertexIds = mesh->vertexIds()->readable();
 	const size_t numVerts = points.size();
@@ -233,9 +239,13 @@ ccl::Mesh *convertPrimary( const IECoreScene::MeshPrimitive *mesh, ccl::Scene *s
 
 ccl::Geometry *convert( const IECoreScenePreview::Renderer::Samples<const IECoreScene::MeshPrimitive *> &samples, const IECoreScenePreview::Renderer::SampleTimes &times, size_t primarySampleIndex, ccl::Scene *scene )
 {
-	ccl::Mesh *result = convertPrimary( samples[primarySampleIndex], scene );
-	GeometryAlgo::convertMotion( IECoreScenePreview::Renderer::staticSamplesCast<const IECoreScene::Primitive *>( samples ), primarySampleIndex, *result );
-	return result;
+	if( ccl::Mesh *result = convertPrimary( samples[primarySampleIndex], scene ) )
+	{
+		GeometryAlgo::convertMotion( IECoreScenePreview::Renderer::staticSamplesCast<const IECoreScene::Primitive *>( samples ), primarySampleIndex, *result );
+		return result;
+	}
+
+	return nullptr;
 }
 
 GeometryAlgo::ConverterDescription<MeshPrimitive> g_description( convert );
