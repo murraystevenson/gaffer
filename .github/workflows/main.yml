@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '*_maintenance'
+      - 'usd2605WindowsTest'
   pull_request:
     branches:
       - '*'
@@ -87,6 +88,7 @@ jobs:
             containerImage:
             testArguments: -excludedCategories performance
             sconsCacheMegabytes: 800
+            dependenciesURL: https://gaffer.wiki/gafferDependencies-2306d651-windows.zip
             jobs: 4
 
     runs-on: ${{ matrix.os }}
