@@ -1,7 +1,10 @@
 1.7.x.x (relative to 1.7.0.0a1)
 =======
 
+Improvements
+------------
 
+- GafferML : Updated ONNX Runtime to version 1.26.0.
 
 1.7.0.0a1 (relative to 1.6.19.1)
 =========

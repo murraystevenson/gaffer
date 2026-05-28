@@ -39,7 +39,7 @@ import shutil
 import subprocess
 from urllib.request import urlretrieve
 
-version = "1.19.2"
+version = "1.26.0"
 
 if sys.platform == "linux" :
 	url = f"https://github.com/microsoft/onnxruntime/releases/download/v{version}/onnxruntime-linux-x64-{version}.tgz"
