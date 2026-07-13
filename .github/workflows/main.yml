@@ -51,7 +51,7 @@ jobs:
             # assert that filesystem permissions are respected, because root doesn't
             # respect permissions. So we run the final test suite as a dedicated
             # test user rather than as root.
-            testRunner: sudo -E -u testUser
+            testRunner: runuser -u testUser --
             sconsCacheMegabytes: 400
             jobs: 4
 
@@ -60,7 +60,7 @@ jobs:
             buildType: DEBUG
             publish: false
             containerImage: ghcr.io/gafferhq/build/build:4.0.0a2
-            testRunner: sudo -E -u testUser
+            testRunner: runuser -u testUser --
             testArguments: -excludedCategories performance
             # Debug builds are ludicrously big, so we must use a larger cache
             # limit. In practice this compresses down to 4-500Mb.
