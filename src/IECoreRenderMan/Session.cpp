@@ -57,6 +57,7 @@ const RtUString g_intensityMultUStr( "intensityMult" );
 const RtUString g_lightingMuteUStr( "lighting:mute" );
 const RtUString g_lightColorUStr( "lightColor" );
 const RtUString g_lightColorMapUStr( "lightColorMap" );
+const RtUString g_lightGroupUStr( "lightGroup" );
 const RtUString g_portalNameUStr( "portalName" );
 const RtUString g_portalToDomeUStr( "portalToDome" );
 const RtUString g_progressModeUStr( "progressMode" );
@@ -261,6 +262,18 @@ void Session::deleteCamera( riley::CameraId cameraId )
 riley::LightShaderId Session::createLightShader( const riley::ShadingNetwork &light, const riley::ShadingNetwork &lightFilter )
 {
 	riley::LightShaderId result = riley->CreateLightShader( riley::UserId(), light, lightFilter );
+
+	if( result != riley::LightShaderId::InvalidId() && light.nodeCount )
+	{
+		RtUString lightGroup;
+		light.nodes[light.nodeCount-1].params.GetString( g_lightGroupUStr, lightGroup );
+		if( !lightGroup.Empty() )
+		{
+			std::lock_guard lock( m_lightGroupsMutex );
+			m_lightGroups[result.AsUInt32()] = lightGroup.CStr();
+		}
+	}
+
 	RtUString type = light.nodeCount ? light.nodes[light.nodeCount-1].name : RtUString();
 	if( type == g_pxrDomeLightUStr || type == g_pxrPortalLightUStr )
 	{
@@ -277,6 +290,11 @@ riley::LightShaderId Session::createLightShader( const riley::ShadingNetwork &li
 void Session::deleteLightShader( riley::LightShaderId lightShaderId )
 {
 	riley->DeleteLightShader( lightShaderId );
+
+	{
+		std::lock_guard lock( m_lightGroupsMutex );
+		m_lightGroups.erase( lightShaderId.AsUInt32() );
+	}
 	auto it = m_domeAndPortalShaders.find( lightShaderId.AsUInt32() );
 	if( it != m_domeAndPortalShaders.end() )
 	{
@@ -525,4 +543,15 @@ void Session::updatePortals()
 	}
 
 	m_portalsDirty = false;
+}
+
+std::set<std::string> Session::lightGroups() const
+{
+	std::set<std::string> result;
+	std::lock_guard lock( m_lightGroupsMutex );
+	for( const auto &g : m_lightGroups )
+	{
+		result.insert( g.second );
+	}
+	return result;
 }
