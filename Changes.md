@@ -25,6 +25,7 @@ Fixes
   - Fixed handling of `treatAsPoint` and `treatAsLine` UsdLuxLight parameters. These are now ignored, matching the behaviour of `hdPrman`.
   - Fixed handling of connections between floats and color/vector components [^2].
   - Fixed bug preventing attributes from being deleted from lights during an interactive render [^2].
+- LightEditor : Fixed bug preventing the "Copy Path" menu item from appearing when the current selection contained locations not shown in the LightEditor.
 
 Build
 -----
