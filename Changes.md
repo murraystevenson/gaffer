@@ -6,6 +6,7 @@ Features
 
 - RandomPrimitiveVariable : Added new node for creating random per-face or per-vertex primitive variables with a variety of distributions.
 - ArnoldOptions : Added new "Scene Description" options to control how Arnold archive files are written. "Binary" can be disabled to produce human readable files, and "Open Procs" expands procedurals, making it possible to write Gaffer scenes that use encapsulation.
+- LightLinkingEditor : Added a new editor UI for inspecting and editing light links.
 
 Improvements
 ------------
