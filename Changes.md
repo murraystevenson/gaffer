@@ -27,6 +27,7 @@ Fixes
   - Fixed bug preventing attributes from being deleted from lights during an interactive render [^2].
 - LightEditor : Fixed bug preventing the "Copy Path" menu item from appearing when the current selection contained locations not shown in the LightEditor.
 - PathListingWidget : Paths dragged from a PathListingWidget now preserve the order in which they are displayed.
+- SetExpressionAlgo : Fixed invalid set expressions returned by `exclude()` when the set expression to be excluded contains only whitespace [^1].
 
 API
 ---
