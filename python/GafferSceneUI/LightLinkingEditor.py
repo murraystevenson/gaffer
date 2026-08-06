@@ -1101,6 +1101,7 @@ Gaffer.Metadata.registerNode(
 
 			"label" : "Mode",
 			"plugValueWidget:type" : "GafferUI.PresetsPlugValueWidget",
+			"labelPlugValueWidget:showValueChangedIndicator" : False,
 			"preset:Append" : "append",
 			"preset:Replace" : "replace",
 			"layout:width" : 130,
@@ -1117,6 +1118,7 @@ Gaffer.Metadata.registerNode(
 
 			"label" : "Attribute",
 			"plugValueWidget:type" : "GafferUI.PresetsPlugValueWidget",
+			"labelPlugValueWidget:showValueChangedIndicator" : False,
 			"preset:Linked Lights" : "linkedLights",
 			"preset:Shadowed Lights" : "shadowedLights",
 			"layout:width" : 130,
