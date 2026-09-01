@@ -1333,8 +1333,7 @@ class SceneView::Camera : public Signals::Trackable
 			:	m_view( view ),
 				m_framed( false ),
 				m_lightToCamera( new LightToCamera ),
-				m_distantApertureAttributeQuery( new AttributeQuery ),
-				m_clippingPlanesAttributeQuery( new AttributeQuery ),
+				m_attributeQuery( new AttributeQuery ),
 				m_lookThroughCameraDirty( true ),
 				m_lookThroughCamera( nullptr ),
 				m_viewportCameraDirty( true ),
@@ -1396,19 +1395,18 @@ class SceneView::Camera : public Signals::Trackable
 			SetFilterPtr lightFilter = new SetFilter;
 			lightFilter->setExpressionPlug()->setValue( "__lights" );
 
-			m_distantApertureAttributeQuery->scenePlug()->setInput( view->inPlug<ScenePlug>() );
+			m_attributeQuery->scenePlug()->setInput( view->inPlug<ScenePlug>() );
 			FloatPlugPtr defaultFloatPlug = new Gaffer::FloatPlug( "defaultFloatPlug" );
-			NameValuePlug *distantApertureQuery = m_distantApertureAttributeQuery->addQuery( defaultFloatPlug.get(), "gl:light:lookThroughAperture" );
+			NameValuePlug *distantApertureQuery = m_attributeQuery->addQuery( defaultFloatPlug.get(), "gl:light:lookThroughAperture" );
 			distantApertureQuery->valuePlug<FloatPlug>()->setInput( lightLookThroughDefaultDistantAperturePlug() );
-			m_clippingPlanesAttributeQuery->scenePlug()->setInput( view->inPlug<ScenePlug>() );
 			V2fPlugPtr defaultV2fPlug = new Gaffer::V2fPlug( "defaultV2fPlug" );
-			NameValuePlug *clippingPlanesQuery = m_clippingPlanesAttributeQuery->addQuery( defaultV2fPlug.get(), "gl:light:lookThroughClippingPlanes" );
+			NameValuePlug *clippingPlanesQuery = m_attributeQuery->addQuery( defaultV2fPlug.get(), "gl:light:lookThroughClippingPlanes" );
 			clippingPlanesQuery->valuePlug<V2fPlug>()->setInput( lightLookThroughDefaultClippingPlanesPlug() );
 
 			m_lightToCamera->inPlug()->setInput( view->inPlug<ScenePlug>() );
 			m_lightToCamera->filterPlug()->setInput( lightFilter->outPlug() );
-			m_lightToCamera->distantAperturePlug()->setInput( const_cast<ValuePlug *>( m_distantApertureAttributeQuery->valuePlugFromQuery( distantApertureQuery ) ) );
-			m_lightToCamera->clippingPlanesPlug()->setInput( const_cast<ValuePlug *>( m_clippingPlanesAttributeQuery->valuePlugFromQuery( clippingPlanesQuery ) ) );
+			m_lightToCamera->distantAperturePlug()->setInput( const_cast<ValuePlug *>( m_attributeQuery->valuePlugFromQuery( distantApertureQuery ) ) );
+			m_lightToCamera->clippingPlanesPlug()->setInput( const_cast<ValuePlug *>( m_attributeQuery->valuePlugFromQuery( clippingPlanesQuery ) ) );
 
 			m_internalNodes.push_back( lightFilter );
 
@@ -1666,8 +1664,7 @@ class SceneView::Camera : public Signals::Trackable
 			M44f cameraTransform;
 			string errorMessage;
 
-			m_clippingPlanesAttributeQuery->locationPlug()->setValue( cameraPathString );
-			m_distantApertureAttributeQuery->locationPlug()->setValue( cameraPathString );
+			m_attributeQuery->locationPlug()->setValue( cameraPathString );
 			try
 			{
 				globals = scenePlug()->globals();
@@ -1892,8 +1889,7 @@ class SceneView::Camera : public Signals::Trackable
 
 		LightToCameraPtr m_lightToCamera;
 
-		AttributeQueryPtr m_distantApertureAttributeQuery;
-		AttributeQueryPtr m_clippingPlanesAttributeQuery;
+		AttributeQueryPtr m_attributeQuery;
 
 		/// Nodes used in an internal processing network.
 		/// Don't need to do anything with them once their set up, but need to hold onto a pointer
