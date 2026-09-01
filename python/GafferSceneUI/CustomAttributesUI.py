@@ -174,6 +174,25 @@ def __addFromAffectedMenuDefinition( menu ) :
 
 	return __addFromPathsMenuDefinition( menu, pathMatcher.paths() )
 
+def __addFromLocationMenuDefinition( menu ) :
+
+	plugCreationWidget = menu.ancestor( GafferUI.PlugCreationWidget )
+	node = plugCreationWidget.plugParent().node()
+
+	locationPlug = node.descendant(
+		Gaffer.Metadata.value( plugCreationWidget.plugParent(), "ui:scene:attributesLocationPlug" )
+	)
+
+	paths = []
+	if locationPlug is not None :
+		scene = next( GafferScene.ScenePlug.RecursiveInputRange( node ) )
+		with plugCreationWidget.context() :
+			location = locationPlug.getValue()
+			if location and scene.exists( location ) :
+				paths = [ location ]
+
+	return __addFromPathsMenuDefinition( menu, paths )
+
 def __addFromSelectedMenuDefinition( menu ) :
 
 	plugCreationWidget = menu.ancestor( GafferUI.PlugCreationWidget )
@@ -247,6 +266,15 @@ def __plugCreationMenu( menuDefinition, widget ) :
 			"/From Affected",
 			{
 				"subMenu" : __addFromAffectedMenuDefinition
+			}
+		)
+
+	if Gaffer.Metadata.value( widget.plugParent(), "ui:scene:attributesLocationPlug" ) :
+
+		menuDefinition.prepend(
+			"/From Location",
+			{
+				"subMenu" : __addFromLocationMenuDefinition
 			}
 		)
 

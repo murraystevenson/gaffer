@@ -9,6 +9,7 @@ Improvements
   - Added `useMetadata` plug. When on, any query that finds a location but fails to find an attribute falls back to returning the `defaultValue` metadata registered for `attribute:<name>` in preference to the default value provided by the query.
   - Added per-query `source` output plug, which reports whether the queried value originated from the location itself, an ancestor, the scene globals, the `defaultValue` metadata, or wasn't found at all.
   - Added `attributes` plug, outputting all attributes at the queried location in a single `IECore::CompoundObject` keyed by attribute name. This includes inherited and global attributes when `inherit` is on.
+  - Added "From Location" submenu to the plug creation menu, for adding queries for the attributes found at `location`.
 
 API
 ---
