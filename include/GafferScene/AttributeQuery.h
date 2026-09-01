@@ -40,7 +40,9 @@
 #include "GafferScene/ScenePlug.h"
 #include "GafferScene/TypeIds.h"
 
+#include "Gaffer/ArrayPlug.h"
 #include "Gaffer/ComputeNode.h"
+#include "Gaffer/NameValuePlug.h"
 #include "Gaffer/StringPlug.h"
 #include "Gaffer/TypedPlug.h"
 #include "Gaffer/TypedObjectPlug.h"
@@ -52,55 +54,83 @@ namespace GafferScene
 
 struct GAFFERSCENE_API AttributeQuery : Gaffer::ComputeNode
 {
-	explicit AttributeQuery( const std::string& name = defaultName< AttributeQuery >() );
+
+	enum class Source
+	{
+		None = 0,
+		Local = 1,
+		Inherited = 2,
+		Globals = 3,
+		Fallback = 4,
+	};
+
+	explicit AttributeQuery( const std::string &name = defaultName<AttributeQuery>() );
 	~AttributeQuery() override;
 
 	GAFFER_NODE_DECLARE_TYPE( GafferScene::AttributeQuery, AttributeQueryTypeId, Gaffer::ComputeNode );
 
-	ScenePlug* scenePlug();
-	const ScenePlug* scenePlug() const;
-	Gaffer::StringPlug* locationPlug();
-	const Gaffer::StringPlug* locationPlug() const;
-	Gaffer::StringPlug* attributePlug();
-	const Gaffer::StringPlug* attributePlug() const;
-	Gaffer::BoolPlug* inheritPlug();
-	const Gaffer::BoolPlug* inheritPlug() const;
-	Gaffer::BoolPlug* existsPlug();
-	const Gaffer::BoolPlug* existsPlug() const;
+	ScenePlug *scenePlug();
+	const ScenePlug *scenePlug() const;
 
-	bool isSetup() const;
-	bool canSetup( const Gaffer::ValuePlug* plug ) const;
-	void setup( const Gaffer::ValuePlug* plug );
+	Gaffer::StringPlug *locationPlug();
+	const Gaffer::StringPlug *locationPlug() const;
 
-	template<typename PlugType = Gaffer::ValuePlug>
-	PlugType* defaultPlug();
-	template<typename PlugType = Gaffer::ValuePlug>
-	const PlugType* defaultPlug() const;
-	template<typename PlugType = Gaffer::ValuePlug>
-	PlugType* valuePlug();
-	template<typename PlugType = Gaffer::ValuePlug>
-	const PlugType* valuePlug() const;
+	Gaffer::BoolPlug *inheritPlug();
+	const Gaffer::BoolPlug *inheritPlug() const;
 
-	void affects( const Gaffer::Plug* input, AffectedPlugsContainer& outputs ) const override;
+	Gaffer::BoolPlug *useMetadataPlug();
+	const Gaffer::BoolPlug *useMetadataPlug() const;
+
+	Gaffer::ArrayPlug *queriesPlug();
+	const Gaffer::ArrayPlug *queriesPlug() const;
+
+	Gaffer::ArrayPlug *outPlug();
+	const Gaffer::ArrayPlug *outPlug() const;
+
+	Gaffer::CompoundObjectPlug *attributesPlug();
+	const Gaffer::CompoundObjectPlug *attributesPlug() const;
+
+	/// Adds a query for attribute, with a type specified by plug.
+	/// The returned NameValuePlug is parented to queriesPlug() and may be edited
+	/// subsequently to modify the attribute name and default. Corresponding children
+	/// are added to outPlug() to provide the output from the query.
+	Gaffer::NameValuePlug *addQuery( const Gaffer::ValuePlug *plug, const std::string &attribute = "" );
+	/// Removes a query. Throws an Exception if the query or corresponding children
+	/// of `outPlug()` can not be deleted.
+	void removeQuery( Gaffer::NameValuePlug *plug );
+
+	void affects( const Gaffer::Plug *input, AffectedPlugsContainer &outputs ) const override;
+
+	/// Returns the `exists`, `source`, `value` or child of `out` corresponding to the specified
+	/// query plug. Throws an exception if the query does not exist or the corresponding output
+	/// plug does not exist or is the wrong type.
+	const Gaffer::BoolPlug *existsPlugFromQuery( const Gaffer::NameValuePlug *queryPlug ) const;
+	const Gaffer::IntPlug *sourcePlugFromQuery( const Gaffer::NameValuePlug *queryPlug ) const;
+	const Gaffer::ValuePlug *valuePlugFromQuery( const Gaffer::NameValuePlug *queryPlug ) const;
+	const Gaffer::ValuePlug *outPlugFromQuery( const Gaffer::NameValuePlug *queryPlug ) const;
+
+	/// Returns the child of `queryPlug` or `outPlug` corresponding to the `outputPlug`.
+	/// `outputPlug` can be any descendant of the desired ancestor.
+	/// Throws an exception if there is no corresponding query or the result is the wrong type.
+	const Gaffer::NameValuePlug *queryPlug( const Gaffer::ValuePlug *outputPlug ) const;
+	const Gaffer::ValuePlug *outPlug( const Gaffer::ValuePlug *outputPlug ) const;
 
 protected:
 
-	void hash( const Gaffer::ValuePlug* output, const Gaffer::Context* context, IECore::MurmurHash& h ) const override;
-	void compute( Gaffer::ValuePlug* output, const Gaffer::Context* context ) const override;
+	void hash( const Gaffer::ValuePlug *output, const Gaffer::Context *context, IECore::MurmurHash &h ) const override;
+	void compute( Gaffer::ValuePlug *output, const Gaffer::Context *context ) const override;
 
 private:
 
-	IECore::InternedString valuePlugName() const;
-	IECore::InternedString defaultPlugName() const;
+	Gaffer::AtomicCompoundDataPlug *internalSourcesPlug();
+	const Gaffer::AtomicCompoundDataPlug *internalSourcesPlug() const;
 
-	Gaffer::ObjectPlug* internalObjectPlug();
-	const Gaffer::ObjectPlug* internalObjectPlug() const;
+	Gaffer::BoolPlug *internalLocationExistsPlug();
+	const Gaffer::BoolPlug *internalLocationExistsPlug() const;
 
 	static size_t g_firstPlugIndex;
 };
 
 IE_CORE_DECLAREPTR( AttributeQuery )
 
-} // GafferScene
-
-#include "GafferScene/AttributeQuery.inl"
+} // namespace GafferScene

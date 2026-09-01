@@ -34,48 +34,137 @@
 #
 ##########################################################################
 
-import Gaffer
-import GafferScene
-import GafferUI
+import functools
+
 import imath
 
-from GafferSceneUI._GafferSceneUI import __showSetupMenu as showSetupMenu
+import Gaffer
+import GafferUI
+import GafferScene
 
-## \todo Replace with PlugCreationWidget, figuring out how that relates to
-# the menu on the PlugAdder used in the GraphEditor. Do we want to have menus
-# on all PlugAdders? Should PlugAdder and PlugCreationWidget be driven by
-# the same metadata?
-class _SetupButton( GafferUI.Widget ) :
+from GafferUI.PlugValueWidget import sole
 
-	def __init__( self, node ) :
+##########################################################################
+# Internal utilities
+##########################################################################
 
-		self.__node = node
-		self.__row = GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Horizontal )
+def __getLabel( plug ) :
 
-		GafferUI.Widget.__init__( self, self.__row )
+	n = plug.node()
+	queryPlug = n.queryPlug( plug )
+	prefix = queryPlug["name"].getValue() or "none"
 
-		with self.__row :
+	return prefix + "." + plug.relativeName( n.outPlugFromQuery( queryPlug ) )
 
-				GafferUI.Spacer( imath.V2i( GafferUI.PlugWidget.labelWidth(), 1 ) )
+##########################################################################
+# Query widget
+##########################################################################
 
-				menuButton = GafferUI.Button( image = "plus.png", hasFrame = False )
-				menuButton.clickedSignal().connect( Gaffer.WeakMethod( self.__showMenu ) )
+class _QueryWidget( GafferUI.PlugValueWidget ) :
 
-				GafferUI.Spacer( imath.V2i( 1 ), imath.V2i( 999999, 1 ), parenting = { "expand" : True } )
+	def __init__( self, queryPlugs, **kw ) :
 
-		node.childAddedSignal().connect( Gaffer.WeakMethod( self.__updateVisibility ) )
-		node.childRemovedSignal().connect( Gaffer.WeakMethod( self.__updateVisibility ) )
+		self.__column = GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Vertical, spacing = 4 )
 
-		self.__updateVisibility()
+		if isinstance( queryPlugs, Gaffer.Plug ) :
+			queryPlugs = { queryPlugs }
 
-	def __showMenu( self, *args, **kwargs ):
+		GafferUI.PlugValueWidget.__init__( self, self.__column, queryPlugs )
 
-		showSetupMenu( self.__node )
+		self.__plugValueWidgets = {}
+		self.__plugWidgets = {}
+		with self.__column :
 
-	def __updateVisibility( self, *args, **kwargs ) :
+			with GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Horizontal, spacing = 4 ) :
 
-		# We can't use `self.setVisible()` because PlugLayout uses it to implement visibility activators
-		self.__row.setVisible( not ( self.__node.isSetup() ) )
+				GafferUI.Spacer( size = imath.V2i( 7, 1 ), maximumSize = imath.V2i( 7, 1 ) )
+
+				self.__collapseButton = GafferUI.Button( image = "collapsibleArrowRight.png", hasFrame = False )
+				self.__collapseButton.clickedSignal().connect( Gaffer.WeakMethod( self.__collapseButtonClicked ) )
+
+				self.__plugValueWidgets["name"] = GafferUI.StringPlugValueWidget( { plug["name"] for plug in self.getPlugs() } )
+				self.__plugValueWidgets["name"].textWidget()._qtWidget().setFixedWidth( GafferUI.PlugWidget.labelWidth() - 23 ) # Adjust for spacer and `collapseButton`
+				self.__plugValueWidgets["defaultValue"] = GafferUI.PlugValueWidget.create( { plug["value"] for plug in self.getPlugs() } )
+
+			with GafferUI.ListContainer( GafferUI.ListContainer.Orientation.Vertical, spacing = 4 ) as self.__outputsColumn :
+
+				outPlugs = [ plug.node().outPlugFromQuery( plug ) for plug in self.getPlugs() ]
+				for childName in outPlugs[0].keys() :
+					widget = GafferUI.PlugWidget( GafferUI.PlugValueWidget.create( { plug[childName] for plug in outPlugs } ) )
+					self.__plugWidgets[childName] = widget
+					self.__plugValueWidgets[childName] = widget.plugValueWidget()
+
+			self.__setOutputsVisible( sole( Gaffer.Metadata.value( p, "ui:queryWidget:outputsVisible" ) for p in queryPlugs ) )
+
+	def setPlugs( self, plugs ) :
+
+		GafferUI.PlugValueWidget.setPlugs( self, plugs )
+
+		self.__plugValueWidgets["name"].setPlugs( { plug["name"] for plug in self.getPlugs() } )
+		self.__plugValueWidgets["defaultValue"].setPlugs( { plug["value"] for plug in self.getPlugs() } )
+
+		outPlugs = [ plug.node().outPlugFromQuery( plug ) for plug in self.getPlugs() ]
+		for childName in outPlugs[0].keys() :
+			childPlugs = { plug[childName] for plug in outPlugs }
+			self.__plugValueWidgets[childName].setPlugs( childPlugs )
+			self.__plugWidgets[childName].labelPlugValueWidget().setPlugs( childPlugs )
+
+	def hasLabel( self ) :
+
+		return True
+
+	def childPlugValueWidget( self, childPlug ) :
+
+		for w in self.__plugValueWidgets.values() :
+			if childPlug in w.getPlugs() :
+				return w
+
+		return None
+
+	def __collapseButtonClicked( self, button ) :
+
+		self.__setOutputsVisible( not self.__getOutputsVisible() )
+
+	def __getOutputsVisible( self ) :
+
+		return self.__outputsColumn.getVisible()
+
+	def __setOutputsVisible( self, visible ) :
+
+		self.__outputsColumn.setVisible( visible )
+		self.__collapseButton.setImage( "collapsibleArrowDown.png" if visible else "collapsibleArrowRight.png" )
+
+		for plug in self.getPlugs() :
+			Gaffer.Metadata.registerValue( plug, "ui:queryWidget:outputsVisible", visible, persistent = False )
+
+class _SourcePlugValueWidget( GafferUI.PlugValueWidget ) :
+
+	def __init__( self, childPlug, **kw ) :
+
+		self.__textWidget = GafferUI.TextWidget( editable = False )
+		self.__textWidget._qtWidget().setFixedWidth( 60 )
+
+		GafferUI.PlugValueWidget.__init__( self, self.__textWidget, childPlug )
+
+	def hasLabel( self ) :
+
+		return True
+
+	def _updateFromValues( self, values, exception ) :
+
+		value = sole( values )
+		if value is None :
+			self.__textWidget.setText( "---" )
+		else :
+			self.__textWidget.setText(
+				GafferScene.AttributeQuery.Source.values[ value ].name if value > 0 else "None"
+			)
+
+		self.__textWidget.setErrored( exception is not None )
+
+##########################################################################
+# Metadata
+##########################################################################
 
 Gaffer.Metadata.registerNode(
 
@@ -83,15 +172,10 @@ Gaffer.Metadata.registerNode(
 
 	"description",
 	"""
-	Query a particular location in a scene and outputs attribute.
+	Queries attributes from a scene location, creating outputs for each attribute.
 	""",
 
-	"layout:customWidget:setupButton:widgetType", "GafferSceneUI.AttributeQueryUI._SetupButton",
-	"layout:customWidget:setupButton:section", "Settings",
-	"layout:customWidget:setupButton:index", -1,
-
-	"noduleLayout:customGadget:setupButton:gadgetType", "GafferSceneUI.AttributeQueryUI.PlugAdder",
-	"noduleLayout:customGadget:setupButton:section", "bottom",
+	"layout:section:Settings.Queries:collapsed", False,
 
 	plugs = {
 
@@ -99,7 +183,7 @@ Gaffer.Metadata.registerNode(
 
 			"description" :
 			"""
-			The scene to query the attribute for.
+			The scene to query the attributes from.
 			"""
 
 		},
@@ -108,9 +192,10 @@ Gaffer.Metadata.registerNode(
 
 			"description" :
 			"""
-			The location within the scene to query the attribute at.
+			The location within the scene to query the attributes at.
 			> Note : If the location does not exist then the query will not be
-			> performed and all outputs will be set to their default values.
+			> performed and all outputs will be set to their default values with
+			> each output `source` plug set to "None" (`0`).
 			""",
 
 			"plugValueWidget:type" : "GafferSceneUI.ScenePathPlugValueWidget",
@@ -119,24 +204,11 @@ Gaffer.Metadata.registerNode(
 
 		},
 
-		"attribute" : {
-
-			"description" :
-			"""
-			The name of the attribute to query.
-			> Note : If the attribute does not exist then the query will not be
-			> performed and all outputs will be set to their default values.
-			""",
-
-			"nodule:type" : ""
-
-		},
-
 		"inherit" : {
 
 			"description" :
 			"""
-			When on, the query includes attributes inherited from ancestor locations
+			When on, each query includes attributes inherited from ancestor locations
 			and the scene globals if a local attribute is not found.
 			""",
 
@@ -144,36 +216,209 @@ Gaffer.Metadata.registerNode(
 
 		},
 
-		"default" : {
+		"useMetadata" : {
 
 			"description" :
 			"""
-			Default value to use if attribute or location does not exist.
-			"""
+			When on, returns "defaultValue" metadata registrations for missing attributes.
+			""",
+
+			"nodule:type" : "",
+
+			"userDefault" : True,
 
 		},
 
-		"exists" : {
+		"attributes" : {
 
 			"description" :
 			"""
-			Outputs true if both attribute and location exist, otherwise false.
+			All attributes at the queried location output as a single `IECore.CompoundObject`.
 			""",
 
-			"layout:section" : "Settings.Outputs"
+			"nodule:type" : "",
 
 		},
 
-		"value" : {
+		"queries" : {
 
 			"description" :
 			"""
-			Outputs the value of the specified attribute.
+			The attributes to be queried - arbitrary numbers of attributes may be added
+			as children of this plug via the user interface, or via python. Each
+			child is a `NameValuePlug` whose `name` plug is the attribute to query,
+			and whose `value` plug is the default value to use if the attribute can
+			not be retrieved.
 			""",
 
-			"layout:section" : "Settings.Outputs"
+			"plugValueWidget:type" : "GafferUI.LayoutPlugValueWidget",
+
+			"layout:section" : "Settings.Queries",
+			"layout:customWidget:footer:widgetType" : "GafferSceneUI.AttributeQueryUI._AttributeQueryFooter",
+			"layout:customWidget:footer:index" : -1,
+			"layout:customWidget:addButton:index" : -1,
+			"plugCreationWidget:action" : "addQuery",
+
+			"nodule:type" : "",
+
+		},
+
+		"queries.*" : {
+
+			"description" :
+			"""
+			A pair of attribute name to query and default value.
+			""",
+
+			"plugValueWidget:type" : "GafferSceneUI.AttributeQueryUI._QueryWidget",
+
+		},
+
+		"queries.*.name" : {
+
+			"description" :
+			"""
+			The name of the attribute to query.
+			""",
+
+		},
+
+		"queries.*.value" : {
+
+			"description" :
+			"""
+			The value to output if the attribute does not exist.
+			""",
+
+		},
+
+		"out" : {
+
+			"description" :
+			"""
+			The parent plug of the query outputs. The order of outputs corresponds
+			to the order of children of `queries`.
+			""",
+
+			"plugValueWidget:type" : "",
+
+			"nodule:type" : "GafferUI::CompoundNodule",
+			"noduleLayout:spacing" : 0.4,
+			"noduleLayout:customGadget:addButton:gadgetType" : "",
+
+		},
+
+		"out.*" : {
+
+			"description" :
+			"""
+			The result of the query.
+			""",
+
+			"nodule:type" : "GafferUI::CompoundNodule",
+
+		},
+
+		"out.*.source" : {
+
+			"description" :
+			"""
+			Outputs the source of the value returned by the query.
+
+			- None (`0`) : No source was found.
+			- Local (`1`) : The location itself.
+			- Inherited (`2`) : An ancestor of the location.
+			- Globals (`3`) : An attribute in the scene globals.
+			- Fallback (`4`) : The query did not find a result and fell back to returning the default value of the attribute.
+
+			> Note : `Inherited` and `Globals` are only possible when `inherit` is on,
+			> and `Fallback` only when `useMetadata` is on.
+			""",
+
+			"plugValueWidget:type" : "GafferSceneUI.AttributeQueryUI._SourcePlugValueWidget",
+
+			"nodule:type" : "",
+
+		},
+
+		"out.*.exists" : {
+
+			"description" :
+			"""
+			Outputs true if the attribute exists, otherwise false.
+			""",
+
+			"noduleLayout:label" : __getLabel,
+
+		},
+
+		"out.*.value" : {
+
+			"description" :
+			"""
+			Outputs the value returned by the query.
+			""",
+
+		},
+
+		"out.*.value..." : {
+
+			"noduleLayout:label" : __getLabel,
 
 		},
 
 	}
 )
+
+##########################################################################
+# _AttributeQueryFooter
+##########################################################################
+
+## \todo Maybe we can move the metadata signalling elsewhere and
+# remove this widget?
+class _AttributeQueryFooter( GafferUI.PlugCreationWidget ) :
+
+	def __init__( self, queriesPlug, **kw ) :
+
+		GafferUI.PlugCreationWidget.__init__( self, queriesPlug, **kw )
+
+		queriesPlug.node().plugSetSignal().connect(
+			Gaffer.WeakMethod( self.__updateQueryMetadata )
+		)
+
+	def __updateQueryMetadata( self, plug ) :
+
+		node = plug.node()
+
+		if node["queries"].isAncestorOf( plug ) :
+
+			qPlug = plug.ancestor( Gaffer.NameValuePlug )
+
+			if qPlug is not None and qPlug["name"] == plug :
+
+				Gaffer.Metadata.plugValueChangedSignal( node )(
+					node.outPlugFromQuery( qPlug ),
+					"label",
+					Gaffer.Metadata.ValueChangedReason.StaticRegistration
+				)
+
+##########################################################################
+# Delete Plug
+##########################################################################
+
+def __plugPopupMenu( menuDefinition, plugValueWidget ) :
+
+	plug = plugValueWidget.getPlug().ancestor( Gaffer.NameValuePlug )
+	if plug is not None and isinstance( plug.node(), GafferScene.AttributeQuery ) and plug.node()["queries"].isAncestorOf( plug ) :
+
+		if len( menuDefinition.items() ) :
+			menuDefinition.append( "/DeleteDivider", { "divider" : True } )
+
+		menuDefinition.append( "/Delete", { "command" : functools.partial( __deletePlug, plug ), "active" : not Gaffer.MetadataAlgo.readOnly( plug.node()["queries"] ) } )
+
+def __deletePlug( plug ) :
+
+	with Gaffer.UndoScope( plug.ancestor( Gaffer.ScriptNode ) ) :
+		plug.node().removeQuery( plug )
+
+GafferUI.PlugValueWidget.popupMenuSignal().connect( __plugPopupMenu )

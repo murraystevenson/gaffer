@@ -43,7 +43,6 @@
 #include "ToolBinding.h"
 #include "ViewBinding.h"
 #include "VisualiserBinding.h"
-#include "QueryBinding.h"
 #include "SetEditorBinding.h"
 #include "RenderPassEditorBinding.h"
 #include "InspectorColumnBinding.h"
@@ -60,7 +59,6 @@ BOOST_PYTHON_MODULE( _GafferSceneUI )
 	bindVisualisers();
 	bindHierarchyView();
 	bindSceneGadget();
-	bindQueries();
 	bindInspector();
 	bindInspectorColumn();
 	bindLightEditor();

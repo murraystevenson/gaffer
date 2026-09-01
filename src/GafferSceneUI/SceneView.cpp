@@ -1398,19 +1398,17 @@ class SceneView::Camera : public Signals::Trackable
 
 			m_distantApertureAttributeQuery->scenePlug()->setInput( view->inPlug<ScenePlug>() );
 			FloatPlugPtr defaultFloatPlug = new Gaffer::FloatPlug( "defaultFloatPlug" );
-			m_distantApertureAttributeQuery->setup( defaultFloatPlug.get() );
-			m_distantApertureAttributeQuery->attributePlug()->setValue( "gl:light:lookThroughAperture" );
-			m_distantApertureAttributeQuery->defaultPlug()->setInput( lightLookThroughDefaultDistantAperturePlug() );
+			NameValuePlug *distantApertureQuery = m_distantApertureAttributeQuery->addQuery( defaultFloatPlug.get(), "gl:light:lookThroughAperture" );
+			distantApertureQuery->valuePlug<FloatPlug>()->setInput( lightLookThroughDefaultDistantAperturePlug() );
 			m_clippingPlanesAttributeQuery->scenePlug()->setInput( view->inPlug<ScenePlug>() );
 			V2fPlugPtr defaultV2fPlug = new Gaffer::V2fPlug( "defaultV2fPlug" );
-			m_clippingPlanesAttributeQuery->setup( defaultV2fPlug.get() );
-			m_clippingPlanesAttributeQuery->attributePlug()->setValue( "gl:light:lookThroughClippingPlanes" );
-			m_clippingPlanesAttributeQuery->defaultPlug()->setInput( lightLookThroughDefaultClippingPlanesPlug() );
+			NameValuePlug *clippingPlanesQuery = m_clippingPlanesAttributeQuery->addQuery( defaultV2fPlug.get(), "gl:light:lookThroughClippingPlanes" );
+			clippingPlanesQuery->valuePlug<V2fPlug>()->setInput( lightLookThroughDefaultClippingPlanesPlug() );
 
 			m_lightToCamera->inPlug()->setInput( view->inPlug<ScenePlug>() );
 			m_lightToCamera->filterPlug()->setInput( lightFilter->outPlug() );
-			m_lightToCamera->distantAperturePlug()->setInput( m_distantApertureAttributeQuery->valuePlug() );
-			m_lightToCamera->clippingPlanesPlug()->setInput( m_clippingPlanesAttributeQuery->valuePlug() );
+			m_lightToCamera->distantAperturePlug()->setInput( const_cast<ValuePlug *>( m_distantApertureAttributeQuery->valuePlugFromQuery( distantApertureQuery ) ) );
+			m_lightToCamera->clippingPlanesPlug()->setInput( const_cast<ValuePlug *>( m_clippingPlanesAttributeQuery->valuePlugFromQuery( clippingPlanesQuery ) ) );
 
 			m_internalNodes.push_back( lightFilter );
 

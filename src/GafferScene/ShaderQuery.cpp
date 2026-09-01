@@ -166,11 +166,13 @@ ShaderQuery::ShaderQuery( const std::string &name ) : Gaffer::ComputeNode( name 
 
 	attributeQuery->scenePlug()->setInput( scenePlug() );
 	attributeQuery->locationPlug()->setInput( locationPlug() );
-	attributeQuery->attributePlug()->setInput( shaderPlug() );
 	attributeQuery->inheritPlug()->setInput( inheritPlug() );
 
-	attributeQuery->setup( intermediateObjectPlug.get() );
-	intermediateObjectPlug->setInput( attributeQuery->valuePlug() );
+	NameValuePlug *attributeQueryPlug = attributeQuery->addQuery( intermediateObjectPlug.get() );
+	attributeQueryPlug->namePlug()->setInput( shaderPlug() );
+	intermediateObjectPlug->setInput(
+		const_cast<ValuePlug *>( attributeQuery->valuePlugFromQuery( attributeQueryPlug ) )
+	);
 }
 
 ShaderQuery::~ShaderQuery()

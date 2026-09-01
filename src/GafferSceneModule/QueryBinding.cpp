@@ -63,49 +63,6 @@ using namespace GafferBindings;
 namespace
 {
 
-bool isSetup( const GafferScene::AttributeQuery& query )
-{
-	return query.isSetup();
-}
-
-bool canSetup( const GafferScene::AttributeQuery& query, const Gaffer::ValuePlug& plug )
-{
-	return query.canSetup( & plug );
-}
-
-void setup( GafferScene::AttributeQuery& query, const Gaffer::ValuePlug& plug )
-{
-	IECorePython::ScopedGILRelease gilRelease;
-	if( !( query.canSetup( & plug ) ) )
-	{
-		throw IECore::Exception( "AttributeQuery cannot be setup from specified plug" );
-	}
-	query.setup( & plug );
-}
-
-class AttributeQuerySerialiser : public GafferBindings::NodeSerialiser
-{
-	std::string postConstructor( const Gaffer::GraphComponent* component, const std::string& identifier, GafferBindings::Serialisation& serialisation ) const override
-	{
-		std::string result = GafferBindings::NodeSerialiser::postConstructor( component, identifier, serialisation );
-
-		const GafferScene::AttributeQuery* const query = IECore::assertedStaticCast< const GafferScene::AttributeQuery >( component );
-
-		if( query->isSetup() )
-		{
-			if( result.size() )
-			{
-				result += "\n";
-			}
-
-			const GafferBindings::Serialisation::Serialiser* const serialiser = Serialisation::acquireSerialiser( query->valuePlug() );
-			result += identifier + ".setup( " + serialiser->constructor( query->valuePlug(), serialisation ) + " )\n";
-		}
-
-		return result;
-	}
-};
-
 template<typename T>
 ValuePlugPtr addQuery( T &query, const ValuePlug &plug, const std::string &parameter )
 {
@@ -242,13 +199,19 @@ class SceneStatsSerialiser : public NodeSerialiser
 
 void GafferSceneModule::bindQueries()
 {
-	GafferBindings::DependencyNodeClass< GafferScene::AttributeQuery >()
-		.def( "isSetup", & isSetup )
-		.def( "canSetup", & canSetup )
-		.def( "setup", & setup )
-	;
+	{
+		boost::python::scope s = bindMultiQuery<GafferScene::AttributeQuery>()
+			.def( "sourcePlugFromQuery", &sourcePlugFromQuery<GafferScene::AttributeQuery, NameValuePlug> )
+		;
 
-	GafferBindings::Serialisation::registerSerialiser( GafferScene::AttributeQuery::staticTypeId(), new AttributeQuerySerialiser() );
+		boost::python::enum_<GafferScene::AttributeQuery::Source>( "Source" )
+			.value( "None_", GafferScene::AttributeQuery::Source::None )
+			.value( "Local", GafferScene::AttributeQuery::Source::Local )
+			.value( "Inherited", GafferScene::AttributeQuery::Source::Inherited )
+			.value( "Globals", GafferScene::AttributeQuery::Source::Globals )
+			.value( "Fallback", GafferScene::AttributeQuery::Source::Fallback )
+		;
+	}
 
 	bindMultiQuery<GafferScene::ShaderQuery>();
 	bindMultiQuery<GafferScene::OptionQuery>();

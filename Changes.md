@@ -1,6 +1,20 @@
 1.x.x.x (relative to 1.7.x.x)
 =======
 
+Improvements
+------------
+
+- AttributeQuery :
+  - Multiple attributes can now be queried from a single node.
+  - Added `useMetadata` plug. When on, any query that finds a location but fails to find an attribute falls back to returning the `defaultValue` metadata registered for `attribute:<name>` in preference to the default value provided by the query.
+  - Added per-query `source` output plug, which reports whether the queried value originated from the location itself, an ancestor, the scene globals, the `defaultValue` metadata, or wasn't found at all.
+  - Added `attributes` plug, outputting all attributes at the queried location in a single `IECore::CompoundObject` keyed by attribute name. This includes inherited and global attributes when `inherit` is on.
+
+API
+---
+
+- AttributeQuery : Added `addQuery()`, `removeQuery()`, `queryPlug()`, `outPlug()`, `existsPlugFromQuery()`, `sourcePlugFromQuery()`, `valuePlugFromQuery()` and `outPlugFromQuery()`.
+
 Breaking Changes
 ----------------
 
@@ -15,6 +29,14 @@ Breaking Changes
   - Removed deprecated support for passing `script` and `context` arguments to `frameRange()` method.
     Use `with script.context()` instead.
 - TractorDispatcher : Removed deprecated support for `preSpoolSignal` slots without `taskData` arguments.
+- AttributeQuery :
+  - Replaced the `attribute`, `default`, `exists` and `value` plugs with `queries` and `out` array plugs supporting multiple queries per node. A compatibility config has been provided to allow nodes to be loaded from scripts saved in earlier Gaffer versions.
+  - Removed `setup()`, `canSetup()`, `isSetup()`. Use `addQuery()` and `removeQuery()` instead.
+  - Removed `attributePlug()` and `defaultPlug()`. Use `namePlug()` and `valuePlug()` from the relevant NameValuePlug child of `queriesPlug()` instead.
+  - Removed `existsPlug()` and `valuePlug()`. Use `existsPlugFromQuery()` and `valuePlugFromQuery()` instead.
+  - Removed the `GafferScene/AttributeQuery.inl` file.
+  - Removed the GraphEditor PlugAdder. Queries are now added via the NodeEditor.
+- AttributeQueryUI : Removed `showSetupMenu()`, along with the `GafferSceneUI/AttributeQueryUI.h` header file.
 
 1.7.x.x (relative to 1.7.1.0)
 =======
