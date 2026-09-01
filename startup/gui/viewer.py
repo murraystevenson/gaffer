@@ -143,18 +143,18 @@ def __createPurposeShadingMode() :
 	result = GafferScene.SceneProcessor( "PurposeVisualiser" )
 
 	result["attributeQuery"] = GafferScene.AttributeQuery()
-	result["attributeQuery"].setup( Gaffer.StringPlug() )
+	result["attributeQuery"].addQuery( Gaffer.StringPlug() )
 	result["attributeQuery"]["scene"].setInput( result["in"] )
 	result["attributeQuery"]["location"].setValue( "${scene:path}" )
-	result["attributeQuery"]["attribute"].setValue( "usd:purpose" )
-	result["attributeQuery"]["default"].setValue( "default" )
+	result["attributeQuery"]["queries"][0]["name"].setValue( "usd:purpose" )
+	result["attributeQuery"]["queries"][0]["value"].setValue( "default" )
 	result["attributeQuery"]["inherit"].setValue( True )
 
 	result["customAttributes"] = GafferScene.CustomAttributes()
 	result["customAttributes"]["in"].setInput( result["in"] )
 
 	result["spreadsheet"] = Gaffer.Spreadsheet()
-	result["spreadsheet"]["selector"].setInput( result["attributeQuery"]["value"] )
+	result["spreadsheet"]["selector"].setInput( result["attributeQuery"]["out"][0]["value"] )
 	result["spreadsheet"]["rows"].addColumn( result["customAttributes"]["extraAttributes"] )
 
 	result["customAttributes"]["extraAttributes"].setInput( result["spreadsheet"]["out"]["extraAttributes"] )
