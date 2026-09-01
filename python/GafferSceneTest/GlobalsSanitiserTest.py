@@ -47,13 +47,12 @@ class GlobalsSanitiserTest( GafferSceneTest.SceneTestCase ) :
 		plane = GafferScene.Plane()
 
 		attributeQuery = GafferScene.AttributeQuery()
-		attributeQuery.setup( Gaffer.BoolPlug() )
+		attributeQuery.addQuery( Gaffer.BoolPlug(), "test" )
 		attributeQuery["scene"].setInput( plane["out"] )
 		attributeQuery["location"].setValue( "/plane" )
-		attributeQuery["attribute"].setValue( "test" )
 
 		options1 = GafferScene.StandardOptions( "options1" )
-		options1["options"]["render:camera"]["enabled"].setInput( attributeQuery["value"] )
+		options1["options"]["render:camera"]["enabled"].setInput( attributeQuery["out"][0]["value"] )
 
 		options2 = GafferScene.StandardOptions( "options2" )
 		options2["in"].setInput( options1["out"] )
