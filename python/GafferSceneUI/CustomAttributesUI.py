@@ -190,10 +190,12 @@ def __addFromPathsMenuDefinition( menu, paths ) :
 	plugCreationWidget = menu.ancestor( GafferUI.PlugCreationWidget )
 	node = plugCreationWidget.plugParent().node()
 
+	scene = next( GafferScene.ScenePlug.RecursiveInputRange( node ) )
+
 	with plugCreationWidget.context():
 		attributes = {}
 		for path in paths :
-			attr = node["in"].fullAttributes( path, withGlobalAttributes = True )
+			attr = scene.fullAttributes( path, withGlobalAttributes = True )
 			attributes.update( attr )
 		existingNames = { plug["name"].getValue() for plug in plugCreationWidget.plugParent() }
 
@@ -239,12 +241,14 @@ def __plugCreationMenu( menuDefinition, widget ) :
 		}
 	)
 
-	menuDefinition.prepend(
-		"/From Affected",
-		{
-			"subMenu" : __addFromAffectedMenuDefinition
-		}
-	)
+	if isinstance( widget.plugParent().node(), GafferScene.FilteredSceneProcessor ) :
+
+		menuDefinition.prepend(
+			"/From Affected",
+			{
+				"subMenu" : __addFromAffectedMenuDefinition
+			}
+		)
 
 GafferUI.PlugCreationWidget.plugCreationMenuSignal().connect( __plugCreationMenu )
 

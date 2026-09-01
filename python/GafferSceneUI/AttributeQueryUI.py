@@ -258,6 +258,7 @@ Gaffer.Metadata.registerNode(
 			"layout:customWidget:footer:index" : -1,
 			"layout:customWidget:addButton:index" : -1,
 			"plugCreationWidget:action" : "addQuery",
+			"ui:scene:acceptsAttributes" : True,
 
 			"nodule:type" : "",
 
