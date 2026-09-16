@@ -200,6 +200,29 @@ void convertElements( const S *source, const size_t sourceComponents, T *target,
 	} );
 }
 
+template<typename S>
+void convertElementsToString( const S *source, const size_t sourceComponents, std::string *target, const size_t size, const Canceller *canceller )
+{
+	parallelProcessElements( size, canceller, [&] ( const size_t begin, const size_t end ) {
+
+		for( size_t i = begin; i < end; ++i )
+		{
+			std::string &t = target[i];
+			for( size_t c = 0; c < sourceComponents; ++c )
+			{
+				if( c > 0 )
+				{
+					t += ' ';
+				}
+
+				fmt::format_to( std::back_inserter( t ), "{}", source[i * sourceComponents + c] );
+			}
+		}
+
+	} );
+}
+
+
 template<typename T, typename S>
 DataPtr convertTypeAndInterpretation( const S *sourceData, std::optional<GeometricData::Interpretation> interpretation, const Canceller *canceller )
 {
@@ -231,11 +254,21 @@ DataPtr convertTypeAndInterpretation( const S *sourceData, std::optional<Geometr
 		targetData->writable().resize( size );
 	}
 
-	convertElements(
-		sourceData->baseReadable(), componentCount<S>(),
-		targetData->baseWritable(), componentCount<T>(), /* fillTargetAlpha = */ TypeTraits::IsColor4<DataElementType<T>>::value,
-		size, canceller
-	);
+	if constexpr( std::is_same_v<DataElementType<T>, std::string> )
+	{
+		convertElementsToString(
+			sourceData->baseReadable(), componentCount<S>(),
+			targetData->baseWritable(), size, canceller
+		);
+	}
+	else
+	{
+		convertElements(
+			sourceData->baseReadable(), componentCount<S>(),
+			targetData->baseWritable(), componentCount<T>(), /* fillTargetAlpha = */ TypeTraits::IsColor4<DataElementType<T>>::value,
+			size, canceller
+		);
+	}
 
 	return targetData;
 }
@@ -269,7 +302,13 @@ DataPtr convertTo( const Data *data, const std::string &name, std::optional<Geom
 
 			using SourceDataType = std::remove_const_t<std::remove_pointer_t<decltype( typedData )>>;
 
-			if constexpr( isConvertible<SourceDataType>() )
+			if constexpr( std::is_same_v<DataElementType<SourceDataType>, std::string> && std::is_same_v<T, std::string> )
+			{
+				// Converting string to string, so return `nullptr` as no change is required.
+				// Conversions from strings to other types are unsupported and should still throw below.
+				return nullptr;
+			}
+			else if constexpr( isConvertible<SourceDataType>() )
 			{
 				if constexpr( TypeTraits::IsVectorTypedData<SourceDataType>::value )
 				{
@@ -353,6 +392,9 @@ DataPtr convertData( const Data *data, const std::string &name, PrimitiveVariabl
 
 		case PrimitiveVariableType::Type::Color4f :
 			return convertTo<Imath::Color4f>( data, name, interpretation, canceller );
+
+		case PrimitiveVariableType::Type::String :
+			return convertTo<std::string>( data, name, interpretation, canceller );
 
 		default :
 			throw IECore::InvalidArgumentException( fmt::format( "PrimitiveVariableType : Invalid target type {}", (int)targetType ) );

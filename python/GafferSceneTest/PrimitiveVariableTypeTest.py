@@ -185,6 +185,8 @@ class PrimitiveVariableTypeTest( GafferSceneTest.SceneTestCase ) :
 			GafferScene.PrimitiveVariableType.Type.Color3f : ( IECore.Color3fData, IECore.Color3fVectorData ),
 			GafferScene.PrimitiveVariableType.Type.Color4f : ( IECore.Color4fData, IECore.Color4fVectorData ),
 
+			GafferScene.PrimitiveVariableType.Type.String : ( IECore.StringData, IECore.StringVectorData ),
+
 		}
 
 		for type in GafferScene.PrimitiveVariableType.Type.values.values() :
@@ -987,3 +989,134 @@ class PrimitiveVariableTypeTest( GafferSceneTest.SceneTestCase ) :
 
 		with GafferTest.TestRunner.PerformanceScope() :
 			node["out"].object( "/plane" )
+
+	def testConversionToString( self ) :
+
+		points = IECoreScene.PointsPrimitive( 0 )
+		points["float"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.FloatData( 0.25 )
+		)
+		points["negativeDouble"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.DoubleData( -4.25 )
+		)
+		points["half"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.HalfData( 2.5 )
+		)
+		points["int"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.IntData( -5 )
+		)
+		points["uchar"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.UCharData( 65 )
+		)
+		points["char"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.CharData( "a" )
+		)
+		points["v2i"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.V2iData( imath.V2i( 20, -35 ) )
+		)
+		points["v3f"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant,
+			IECore.V3fData( imath.V3f( -10.5, 101.25, 50 ), IECore.GeometricData.Interpretation.Normal )
+		)
+		points["color4f"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.Color4fData( imath.Color4f( 0.25, 0.5, 0.75, 1 ) )
+		)
+		points["intArray"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.IntVectorData( [ 3, 2, 1, 0, -1 ] )
+		)
+		points["floatArray"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.FloatVectorData( [ 0.25, 0.5, 5.125 ] )
+		)
+		points["v3fArray"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant,
+			IECore.V3fVectorData( [ imath.V3f( 1, 2, 3 ), imath.V3f( 4, 5, 6 ) ] )
+		)
+
+		node = self.__convert( points )
+		node["type"]["value"].setValue( int( GafferScene.PrimitiveVariableType.Type.String ) )
+
+		result = node["out"].object( "/object" )
+
+		self.assertEqual( result["float"].data, IECore.StringData( "0.25" ) )
+		self.assertEqual( result["negativeDouble"].data, IECore.StringData( "-4.25" ) )
+		self.assertEqual( result["half"].data, IECore.StringData( "2.5" ) )
+		self.assertEqual( result["int"].data, IECore.StringData( "-5" ) )
+		self.assertEqual( result["uchar"].data, IECore.StringData( "65" ) )
+		self.assertEqual( result["char"].data, IECore.StringData( "a" ) )
+		self.assertEqual( result["v2i"].data, IECore.StringData( "20 -35" ) )
+		self.assertEqual( result["v3f"].data, IECore.StringData( "-10.5 101.25 50" ) )
+		self.assertEqual( result["color4f"].data, IECore.StringData( "0.25 0.5 0.75 1" ) )
+		self.assertEqual( result["intArray"].data, IECore.StringVectorData( [ "3", "2", "1", "0", "-1" ] ) )
+		self.assertEqual( result["floatArray"].data, IECore.StringVectorData( [ "0.25", "0.5", "5.125" ] ) )
+		self.assertEqual( result["v3fArray"].data, IECore.StringVectorData( [ "1 2 3", "4 5 6" ] ) )
+
+		self.assertTrue( result.arePrimitiveVariablesValid() )
+
+	def testStringPassthrough( self ) :
+
+		points = IECoreScene.PointsPrimitive( 0 )
+		points["string"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.StringData( "hello" )
+		)
+		points["stringArray"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.StringVectorData( [ "one", "two" ] )
+		)
+
+		node = self.__convert( points )
+		node["type"]["value"].setValue( int( GafferScene.PrimitiveVariableType.Type.String ) )
+
+		self.assertEqual( node["out"].object( "/object" ), points )
+
+	def testUnsupportedStringConversionsRaise( self ) :
+
+		points = IECoreScene.PointsPrimitive( 0 )
+		points["bool"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.BoolData( True )
+		)
+		points["matrix"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.M44fData( imath.M44f() )
+		)
+		points["quaternion"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.QuatfData( imath.Quatf( 1, 2, 3, 4 ) )
+		)
+		points["box"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant,
+			IECore.Box3fData( imath.Box3f( imath.V3f( 0 ), imath.V3f( 1 ) ) )
+		)
+		points["internedString"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.InternedStringData( "Invalid" )
+		)
+		points["internedStringArray"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.InternedStringVectorData( [ "Invalid" ] )
+		)
+		points["boolArray"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.BoolVectorData( [ True ] )
+		)
+		points["matrix33"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.M33fData( imath.M33f() )
+		)
+		points["matrixArray"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.M44fVectorData( [ imath.M44f() ] )
+		)
+		points["quaternionArray"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant, IECore.QuatfVectorData( [ imath.Quatf( 1, 2, 3, 4 ) ] )
+		)
+		points["box2i"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant,
+			IECore.Box2iData( imath.Box2i( imath.V2i( 0 ), imath.V2i( 1 ) ) )
+		)
+		points["boxArray"] = IECoreScene.PrimitiveVariable(
+			IECoreScene.PrimitiveVariable.Interpolation.Constant,
+			IECore.Box3fVectorData( [ imath.Box3f( imath.V3f( 0 ), imath.V3f( 1 ) ) ] )
+		)
+
+		node = self.__convert( points )
+		node["type"]["value"].setValue( int( GafferScene.PrimitiveVariableType.Type.String ) )
+
+		for name in points.keys() :
+			typeName = points[name].data.typeName()
+			with self.subTest( name = name, typeName = typeName ) :
+				node["primitiveVariables"].setValue( name )
+
+				with self.assertRaisesRegex( Gaffer.ProcessException, f"PrimitiveVariableType : Primitive variable \"{name}\" has unsupported type \"{typeName}\"" ) :
+					node["out"].object( "/object" )

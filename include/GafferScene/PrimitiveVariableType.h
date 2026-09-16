@@ -72,9 +72,10 @@ class GAFFERSCENE_API PrimitiveVariableType : public ObjectProcessor
 			V3d,
 			Color3f,
 			Color4f,
+			String,
 
 			First = UChar,
-			Last = Color4f,
+			Last = String,
 		};
 
 		Gaffer::StringPlug *primitiveVariablesPlug();

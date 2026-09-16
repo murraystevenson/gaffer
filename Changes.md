@@ -5,6 +5,7 @@ Improvements
 ------------
 
 - EditScope : Disabled the additional ➕ gadgets in the GraphEditor by default. They can be shown again using the UIEditor if necessary.
+- PrimitiveVariableType : Added `String` as a destination type, allowing numeric primitive variables to be converted to strings.
 
 Fixes
 -----

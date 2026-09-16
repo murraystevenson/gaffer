@@ -102,6 +102,9 @@ Gaffer.Metadata.registerNode(
 			integer, so `2.75` becomes `2`, and `-2.75` becomes `-2`.
 			- Values converted to integer types are clamped to the range of the
 			destination type.
+			- Conversions to `string` destinations produce a space separated string
+			containing each component of the source. For example, `Color4f( 1, 2, 3, 4 )`
+			becomes `"1 2 3 4"` and `V2f( 1, 2 )` becomes `"1 2"`.
 			""",
 
 		},
@@ -118,6 +121,7 @@ Gaffer.Metadata.registerNode(
 			"preset:V3f" : GafferScene.PrimitiveVariableType.Type.V3f,
 			"preset:Color3f" : GafferScene.PrimitiveVariableType.Type.Color3f,
 			"preset:Color4f" : GafferScene.PrimitiveVariableType.Type.Color4f,
+			"preset:String" : GafferScene.PrimitiveVariableType.Type.String,
 
 			"preset:Other/UChar" : GafferScene.PrimitiveVariableType.Type.UChar,
 			"preset:Other/UInt" : GafferScene.PrimitiveVariableType.Type.UInt,

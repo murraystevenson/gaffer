@@ -158,6 +158,7 @@ void GafferSceneModule::bindPrimitiveVariables()
 			.value( "V3d", PrimitiveVariableType::Type::V3d )
 			.value( "Color3f", PrimitiveVariableType::Type::Color3f )
 			.value( "Color4f", PrimitiveVariableType::Type::Color4f )
+			.value( "String", PrimitiveVariableType::Type::String )
 		;
 	}
 }
