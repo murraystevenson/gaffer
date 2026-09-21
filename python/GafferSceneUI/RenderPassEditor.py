@@ -428,8 +428,11 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 			sectionColumns.append( ( self.__acquireColumn( _AdderColumn, currentSection ), -1 ) )
 		else :
 			for groupKey, sections in self.__columnRegistry.items() :
-				if IECore.StringAlgo.match( tabGroup, groupKey ) :
-					section = sections.get( currentSection or None, {} )
+				if not IECore.StringAlgo.match( tabGroup, groupKey ) :
+					continue
+
+				matchingSections = sections.values() if currentSection == "All" and not sections.get( "All" ) else [ sections.get( currentSection or None, {} ) ]
+				for section in matchingSections :
 					for columnKey, ( columnCreator, index ) in section.items() :
 						column = self.__acquireColumn( columnCreator, currentSection )
 						if self.__columnFilterMatch( pattern, columnKey, column.headerData( rootPath ).value ) :
@@ -1332,8 +1335,12 @@ class _SectionPlugValueWidget( GafferUI.PlugValueWidget ) :
 					tabNames.extend( sections.keys() )
 			# Deduplicate sections while preserving order in case the same
 			# section has been registered to multiple matching groupKeys.
-			for name in list( dict.fromkeys( tabNames ) ) :
+			tabNames = list( dict.fromkeys( tabNames ) )
+			for name in tabNames :
 				self._qtWidget().addTab( name )
+
+			if "All" not in tabNames and len( tabNames ) > 1 :
+				self._qtWidget().addTab( "All" )
 
 			self._qtWidget().addTab( "Favourites" )
 		finally :
