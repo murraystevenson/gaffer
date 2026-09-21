@@ -39,6 +39,7 @@ import functools
 import imath
 import inspect
 import os
+import re
 import traceback
 
 import IECore
@@ -82,6 +83,8 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 			self["__filter"]["in"].setInput( self["__adaptors"]["out"] )
 			Gaffer.PlugAlgo.promote( self["__filter"]["filter"] )
 			Gaffer.PlugAlgo.promote( self["__filter"]["hideDisabled"] )
+
+			self["columnFilters"] = Gaffer.Plug()
 
 			self["__filteredIn"] = GafferScene.ScenePlug()
 			self["__filteredIn"].setInput( self["__filter"]["out"] )
@@ -370,7 +373,7 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 
 	def _updateFromSettings( self, plug ) :
 
-		if plug in ( self.settings()["section"], self.settings()["tabGroup"] ) :
+		if plug in ( self.settings()["section"], self.settings()["tabGroup"] ) or Gaffer.Metadata.value( plug, "columnFilter:sectionName" ) == self.settings()["section"].getValue() :
 			self.__updateColumns()
 		elif plug == self.settings()["favouriteColumns"] and self.__currentSectionEditable() :
 			self.__updateColumns()
@@ -389,13 +392,23 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 
 		tabGroup = self.settings()["tabGroup"].getValue()
 		currentSection = self.settings()["section"].getValue()
+		rootPath = self.__pathListing.getPath()
+		pattern = self.__acquireColumnFilterPlug().getValue()
+		sectionsMovable = currentSection == "Favourites"
 
 		sectionColumns = []
 
 		if currentSection == "Favourites" :
-			for ( index, favouriteName ) in enumerate( self.settings()["favouriteColumns"].getValue() ) :
+			index = 0
+			for favouriteName in self.settings()["favouriteColumns"].getValue() :
 				if favouriteName.startswith( "option:" ) :
-					sectionColumns.append( ( self.__acquireColumn( favouriteName, currentSection ), index ) )
+					column = self.__acquireColumn( favouriteName, currentSection )
+					if self.__columnFilterMatch( pattern, favouriteName.removeprefix( "option:" ), column.headerData( rootPath ).value ) :
+						sectionColumns.append( ( column, index ) )
+						index += 1
+					else :
+						# Prevent reordering of sections when not all are visible.
+						sectionsMovable = False
 				else :
 					IECore.msg( IECore.Msg.Level.Warning, "RenderPassEditor", "Unknown favourite \"{}\". Option favourites should start with \"option:\".".format( favouriteName ) )
 
@@ -417,10 +430,13 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 			for groupKey, sections in self.__columnRegistry.items() :
 				if IECore.StringAlgo.match( tabGroup, groupKey ) :
 					section = sections.get( currentSection or None, {} )
-					sectionColumns += [ ( self.__acquireColumn( c, currentSection ), index ) for ( c, index ) in section.values() ]
+					for columnKey, ( columnCreator, index ) in section.items() :
+						column = self.__acquireColumn( columnCreator, currentSection )
+						if self.__columnFilterMatch( pattern, columnKey, column.headerData( rootPath ).value ) :
+							sectionColumns.append( ( column, index ) )
 
 		self.__pathListing.setColumns( self.__commonColumns + self.__orderedColumns( sectionColumns ) )
-		self.__pathListing._qtWidget().header().setSectionsMovable( currentSection == "Favourites" )
+		self.__pathListing._qtWidget().header().setSectionsMovable( sectionsMovable )
 
 	def __acquireColumn( self, columnCreator, section ) :
 
@@ -440,6 +456,38 @@ class RenderPassEditor( GafferSceneUI.SceneEditor ) :
 				column.dropSignal().connectFront( Gaffer.WeakMethod( self.__columnHeaderDrop ) )
 
 		return column
+
+	def __acquireColumnFilterPlug( self ) :
+
+		section = self.settings()["section"].getValue()
+		plugName = IECore.CamelCase.fromSpaced( re.sub( "[^A-Za-z0-9_:]+", " ", section or "Main" ) )
+
+		if plugName not in self.settings()["columnFilters"] :
+			plug = Gaffer.StringPlug()
+			Gaffer.Metadata.registerValue( plug, "columnFilter:sectionName", section )
+			self.settings()["columnFilters"][plugName] = plug
+
+		return self.settings()["columnFilters"][plugName]
+
+	@staticmethod
+	def __columnFilterMatch( pattern, columnKey, headerValue ) :
+
+		filterTokens = pattern.lower().split()
+		if not filterTokens or "*" in filterTokens :
+			return True
+
+		pattern = " ".join(
+			token if IECore.StringAlgo.hasWildcards( token ) else f"*{token}*"
+			for token in filterTokens
+		)
+
+		if IECore.StringAlgo.matchMultiple( columnKey.lower(), pattern ) :
+			return True
+
+		if not isinstance( headerValue, str ) :
+			return False
+
+		return IECore.StringAlgo.matchMultiple( headerValue.lower(), pattern )
 
 	@staticmethod
 	def __orderedColumns( columnsAndIndices ) :
@@ -1101,7 +1149,7 @@ Gaffer.Metadata.registerNode(
 			"plugValueWidget:type" : "GafferUI.TogglePlugValueWidget",
 			"togglePlugValueWidget:imagePrefix" : "search",
 			"togglePlugValueWidget:defaultToggleValue" : "*",
-			"stringPlugValueWidget:placeholderText" : "Filter...",
+			"stringPlugValueWidget:placeholderText" : "Filter render passes...",
 			"layout:section" : "Filter",
 
 		},
@@ -1115,6 +1163,49 @@ Gaffer.Metadata.registerNode(
 
 			"boolPlugValueWidget:labelVisible" : True,
 			"layout:section" : "Filter",
+			"layout:divider" : True,
+
+		},
+
+		"columnFilters" : {
+
+			"plugValueWidget:type" : "GafferUI.LayoutPlugValueWidget",
+			"layout:section" : "Filter",
+			"layout:width" : 160,
+
+		},
+
+		"columnFilters.*" : {
+
+			"description" :
+			"""
+			Filters the columns of the current section to show only those with
+			matching names. Columns are matched by their header text, or the
+			name of their option. Matching is case-insensitive, and is
+			performed against a fragment of the name or a pattern containing
+			any of Gaffer's standard wildcards. Multiple space separated terms
+			may be entered, columns matching any one of them are shown.
+
+			Examples
+			--------
+
+			- `color` : Only show columns with `color` anywhere in their name.
+			- `color shadow` : Only show columns with `color` or `shadow` anywhere in their name.
+			- `shadow*` : Only show columns starting with `shadow`.
+			- `diff* *spec` : Only show columns starting with `diff` or ending with `spec`.
+			""",
+
+			"plugValueWidget:type" : "GafferUI.TogglePlugValueWidget",
+			"togglePlugValueWidget:image:on" : "searchOn.png",
+			"togglePlugValueWidget:image:off" : "search.png",
+			# We need a non-default value to toggle to, so that the first
+			# toggling can highlight the icon. `*` seems like a reasonable value
+			# since it has no effect on the filtering, and hints that wildcards
+			# are available.
+			"togglePlugValueWidget:defaultToggleValue" : "*",
+			"stringPlugValueWidget:placeholderText" : "Filter columns...",
+
+			"layout:visibilityActivator" : lambda plug : Gaffer.Metadata.value( plug, "columnFilter:sectionName" ) == plug.node()["section"].getValue()
 
 		},
 

@@ -5,6 +5,7 @@ Improvements
 ------------
 
 - LightEditor : Added hierarchy filter.
+- LightEditor, RenderPassEditor, AttributeEditor : Added column filter. When enabled, only columns matching the search text are shown.
 
 Fixes
 -----

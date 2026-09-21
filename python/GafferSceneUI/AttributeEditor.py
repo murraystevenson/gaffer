@@ -35,6 +35,7 @@
 ##########################################################################
 
 import collections
+import re
 
 import imath
 
@@ -60,6 +61,7 @@ class AttributeEditor( GafferSceneUI.SceneEditor ) :
 			self["tabGroup"] = Gaffer.StringPlug( defaultValue = "Standard" )
 			self["section"] = Gaffer.StringPlug( defaultValue = "Attributes" )
 			self["editScope"] = Gaffer.Plug()
+			self["columnFilters"] = Gaffer.Plug()
 
 	IECore.registerRunTimeTyped( Settings, "GafferSceneUI::AttributeEditor::Settings" )
 
@@ -110,6 +112,7 @@ class AttributeEditor( GafferSceneUI.SceneEditor ) :
 		)
 
 		self.__columnCache = {}
+		self.__columnFilterPlugs = {}
 
 		self._updateFromSet()
 		self.__transferSelectionFromScriptNode()
@@ -195,7 +198,7 @@ class AttributeEditor( GafferSceneUI.SceneEditor ) :
 
 	def _updateFromSettings( self, plug ) :
 
-		if plug in ( self.settings()["section"], self.settings()["tabGroup"] ) :
+		if plug in ( self.settings()["section"], self.settings()["tabGroup"] ) or Gaffer.Metadata.value( plug, "columnFilter:sectionName" ) == self.settings()["section"].getValue() :
 			self.__updateColumns()
 
 	@GafferUI.LazyMethod( deferUntilVisible = False, deferUntilPlaybackStops = True )
@@ -208,17 +211,21 @@ class AttributeEditor( GafferSceneUI.SceneEditor ) :
 
 		tabGroup = self.settings()["tabGroup"].getValue()
 		currentSection = self.settings()["section"].getValue()
+		rootPath = self.__pathListing.getPath()
+		pattern = self.__acquireColumnFilterPlug().getValue()
 
 		sectionColumns = []
 
 		for groupKey, sections in self.__columnRegistry.items() :
-			if IECore.StringAlgo.match( tabGroup, groupKey ) :
-				if currentSection == "All" and not sections.get( "All" ) :
-					for section in sections.values() :
-						sectionColumns += [ self.__acquireColumn( c, "All" ) for c in section.values() ]
-				else :
-					section = sections.get( currentSection or None, {} )
-					sectionColumns += [ self.__acquireColumn( c, currentSection ) for c in section.values() ]
+			if not IECore.StringAlgo.match( tabGroup, groupKey ) :
+				continue
+
+			matchingSections = sections.values() if currentSection == "All" and not sections.get( "All" ) else [ sections.get( currentSection or None, {} ) ]
+			for section in matchingSections :
+				for columnKey, columnCreator in section.items() :
+					column = self.__acquireColumn( columnCreator, currentSection )
+					if self.__columnFilterMatch( pattern, columnKey, column.headerData( rootPath ).value ) :
+						sectionColumns.append( column )
 
 		self.__pathListing.setColumns( [ self.__locationNameColumn, self.__visibilityColumn ] + sectionColumns )
 
@@ -230,6 +237,41 @@ class AttributeEditor( GafferSceneUI.SceneEditor ) :
 			self.__columnCache[ ( columnCreator, section ) ] = column
 
 		return column
+
+	def __acquireColumnFilterPlug( self ) :
+
+		section = self.settings()["section"].getValue()
+		plug = self.__columnFilterPlugs.get( section )
+		if plug is not None :
+			return plug
+
+		plug = Gaffer.StringPlug( IECore.CamelCase.fromSpaced( re.sub( "[^A-Za-z0-9_:]+", " ", section or "Main" ) ) )
+		Gaffer.Metadata.registerValue( plug, "columnFilter:sectionName", section )
+		self.settings()["columnFilters"].addChild( plug )
+		Gaffer.NodeAlgo.applyUserDefault( plug )
+		self.__columnFilterPlugs[section] = plug
+
+		return plug
+
+	@staticmethod
+	def __columnFilterMatch( pattern, columnKey, headerValue ) :
+
+		filterTokens = pattern.lower().split()
+		if not filterTokens or "*" in filterTokens :
+			return True
+
+		pattern = " ".join(
+			token if IECore.StringAlgo.hasWildcards( token ) else f"*{token}*"
+			for token in filterTokens
+		)
+
+		if IECore.StringAlgo.matchMultiple( columnKey.lower(), pattern ) :
+			return True
+
+		if not isinstance( headerValue, str ) :
+			return False
+
+		return IECore.StringAlgo.matchMultiple( headerValue.lower(), pattern )
 
 	def __selectedPathsChanged( self, scriptNode ) :
 
@@ -316,6 +358,54 @@ Gaffer.Metadata.registerNode(
 		"section" : {
 
 			"plugValueWidget:type" : "GafferSceneUI.AttributeEditor._SectionPlugValueWidget",
+
+		},
+
+		"setFilter" : {
+
+			"layout:divider" : True,
+
+		},
+
+		"columnFilters" : {
+
+			"plugValueWidget:type" : "GafferUI.LayoutPlugValueWidget",
+			"layout:section" : "Filter",
+			"layout:width" : 160,
+
+		},
+
+		"columnFilters.*" : {
+
+			"description" :
+			"""
+			Filters the columns of the current section to show only those with
+			matching names. Columns are matched by their header text, or the
+			name of their attribute. Matching is case-insensitive, and is
+			performed against a fragment of the name or a pattern containing
+			any of Gaffer's standard wildcards. Multiple space separated terms
+			may be entered, columns matching any one of them are shown.
+
+			Examples
+			--------
+
+			- `color` : Only show columns with `color` anywhere in their name.
+			- `color shadow` : Only show columns with `color` or `shadow` anywhere in their name.
+			- `shadow*` : Only show columns starting with `shadow`.
+			- `diff* *spec` : Only show columns starting with `diff` or ending with `spec`.
+			""",
+
+			"plugValueWidget:type" : "GafferUI.TogglePlugValueWidget",
+			"togglePlugValueWidget:image:on" : "searchOn.png",
+			"togglePlugValueWidget:image:off" : "search.png",
+			# We need a non-default value to toggle to, so that the first
+			# toggling can highlight the icon. `*` seems like a reasonable value
+			# since it has no effect on the filtering, and hints that wildcards
+			# are available.
+			"togglePlugValueWidget:defaultToggleValue" : "*",
+			"stringPlugValueWidget:placeholderText" : "Filter columns...",
+
+			"layout:visibilityActivator" : lambda plug : Gaffer.Metadata.value( plug, "columnFilter:sectionName" ) == plug.node()["section"].getValue()
 
 		},
 
