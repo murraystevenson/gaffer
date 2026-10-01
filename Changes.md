@@ -49,6 +49,11 @@ Breaking Changes
   - Removed deprecated `postSerialisationSignal()`.
   - Renamed `staticPostSerialisationSignal()` to `postSerialisationSignal()`.
 
+Build
+-----
+
+- C++ : Updated to C++20.
+
 1.7.x.x (relative to 1.7.6.0)
 =======
 
