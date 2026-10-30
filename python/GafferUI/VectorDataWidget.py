@@ -1350,12 +1350,12 @@ class _Delegate( QtWidgets.QStyledItemDelegate ) :
 		if QtWidgets.QStyledItemDelegate.eventFilter( self, object, event ) :
 			return True
 
-		if event.type() == event.Hide and self.__editor is not None :
+		if event.type() == QtCore.QEvent.Hide and self.__editor is not None :
 			# custom editors may hide themselves to indicate that editing
 			# is complete. when this happens we are responsible for carrying
 			# out this completion.
 			self.commitData.emit( self.__editor._qtWidget() )
-			self.closeEditor.emit( self.__editor._qtWidget(), self.NoHint )
+			self.closeEditor.emit( self.__editor._qtWidget(), QtWidgets.QAbstractItemDelegate.EndEditHint.NoHint )
 
 		return False
 
