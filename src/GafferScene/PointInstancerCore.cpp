@@ -139,7 +139,8 @@ struct TypedContextVariableCreator : public ContextVariableCreator
 
 	string format( size_t pointIndex ) const override
 	{
-		return safeFormat( m_indexedView[pointIndex] );
+		// `static_cast` needed to avoid the `vector<bool>` fiasco.
+		return safeFormat( static_cast<T>( m_indexedView[pointIndex] ) );
 	}
 
 	private :
