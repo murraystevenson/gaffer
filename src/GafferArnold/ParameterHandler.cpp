@@ -46,6 +46,8 @@
 #include "Gaffer/StringPlug.h"
 #include "Gaffer/TypedPlug.h"
 
+#include "IECoreArnold/Private/AtStringFormat.h"
+
 #include "IECore/MessageHandler.h"
 
 #include "boost/container/flat_set.hpp"

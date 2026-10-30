@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "IECoreArnold/ParameterAlgo.h"
+#include "IECoreArnold/Private/AtStringFormat.h"
 
 #include "IECore/DataAlgo.h"
 #include "IECore/MessageHandler.h"
