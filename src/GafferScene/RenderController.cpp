@@ -1640,16 +1640,15 @@ void RenderController::updateInternal( const ProgressCallback &callback, const I
 			// know our entire scene has been updated successfully.
 			m_changedGlobalComponents = NoGlobalComponent;
 			m_updateRequired = false;
-			if( m_failedAttributeEdits )
+			if( const auto failedEdits = m_failedAttributeEdits.exchange( 0 ) )
 			{
 				IECore::msg(
 					IECore::Msg::Warning, "RenderController",
 					fmt::format(
 						"{} attribute edit{} required geometry to be regenerated",
-						m_failedAttributeEdits, m_failedAttributeEdits > 1 ? "s" : ""
+						failedEdits, failedEdits > 1 ? "s" : ""
 					)
 				);
-				m_failedAttributeEdits = 0;
 			}
 			if( m_lightLinks )
 			{
