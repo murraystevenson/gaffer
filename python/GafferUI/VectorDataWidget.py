@@ -49,7 +49,6 @@ from Qt import QtCore
 from Qt import QtGui
 from Qt import QtWidgets
 from Qt import QtCompat
-import Qt
 
 ## The VectorDataWidget provides a table view for the contents of
 # one or more IECore VectorData instances.
@@ -1600,7 +1599,7 @@ class _BoolDelegate( _Delegate ) :
 			# eat event so row isn't selected
 			widget = QtCore.QObject.parent( self.parent() )
 			rect = self.__checkBoxRect( widget, option.rect )
-			position = event.position().toPoint() if Qt.__binding__ == "PySide6" else event.pos()
+			position = event.position().toPoint()
 			if event.button() == QtCore.Qt.LeftButton and rect.contains( position ) :
 				checked = self.__toBool( index )
 				model.setData( index, not checked, QtCore.Qt.EditRole )

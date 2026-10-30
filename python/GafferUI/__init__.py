@@ -53,12 +53,8 @@ __import__( "uuid" )
 
 def _qtAddress( o ) :
 
-	import Qt
-	if "PyQt" in Qt.__binding__ :
-		import sip
-		return sip.unwrapinstance( o )
-	else :
-		return __shiboken().getCppPointer( o )[0]
+	import shiboken6
+	return shiboken6.getCppPointer( o )[0]
 
 ##########################################################################
 # Function to return a wrapped Qt object from the given C++ address.
@@ -68,12 +64,8 @@ def _qtAddress( o ) :
 
 def _qtObject( address, type ) :
 
-	import Qt
-	if "PyQt" in Qt.__binding__ :
-		import sip
-		return sip.wrapinstance( address, type )
-	else :
-		return __shiboken().wrapInstance( address, type )
+	import shiboken6
+	return shiboken6.wrapInstance( address, type )
 
 ##########################################################################
 # Determines if the wrapped Qt object is still valid
@@ -84,31 +76,8 @@ def _qtObject( address, type ) :
 
 def _qtObjectIsValid( o ) :
 
-	import Qt
-	if "PyQt" in Qt.__binding__ :
-		import sip
-		return not sip.isdeleted( o )
-	else :
-		return __shiboken().isValid( o )
-
-##########################################################################
-# Shiboken lives in a variety of places depending on which PySide it is.
-##########################################################################
-
-def __shiboken() :
-
-	import Qt
-	assert( Qt.__binding__ in ( "PySide2", "PySide6" ) )
-
-	if Qt.__binding__ == "PySide6" :
-		import shiboken6 as shiboken
-	else :
-		try :
-			import PySide2.shiboken2 as shiboken
-		except ImportError :
-			import shiboken2 as shiboken
-
-	return shiboken
+	import shiboken6
+	return shiboken6.isValid( o )
 
 ##########################################################################
 # now import our actual functionality
