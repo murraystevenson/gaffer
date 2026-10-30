@@ -400,6 +400,7 @@ env = Environment(
 	CPPDEFINES = [
 		( "BOOST_FILESYSTEM_VERSION", "3" ),
 		"BOOST_FILESYSTEM_NO_DEPRECATED",
+		"FMT_SHARED",
 	],
 
 	CPPPATH = [
