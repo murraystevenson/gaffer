@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '*_maintenance'
+      - 'platform26Update'
   pull_request:
     branches:
       - '*'
