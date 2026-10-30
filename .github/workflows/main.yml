@@ -79,7 +79,7 @@ jobs:
             sconsCacheMegabytes: 400
             jobs: 4
             dependenciesURL: https://github.com/ImageEngine/cortex/releases/download/10.7.4.0/cortex-10.7.4.0-linux-platform24.tar.gz
-            extraBuildArguments: CYCLES_ROOT=""
+            extraBuildArguments: CYCLES_ROOT="" CXXSTD="c++17"
 
           - name: windows
             os: windows-2022
