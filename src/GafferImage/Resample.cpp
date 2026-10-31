@@ -1950,7 +1950,7 @@ IECore::ConstFloatVectorDataPtr Resample::computeChannelData( const std::string 
 				for( oP.x = tileBound.min.x; oP.x < tileBound.max.x; ++oP.x )
 				{
 					boost::span<const float> channelSamples = sampleOffsetsSampler.sample( *iPxIt, iPy );
-					memcpy( &result[outputSamplePosition], &channelSamples[0], channelSamples.size() * sizeof( float ) );
+					memcpy( &result[outputSamplePosition], channelSamples.data(), channelSamples.size() * sizeof( float ) );
 					outputSamplePosition += channelSamples.size();
 					++iPxIt;
 				}
@@ -2004,7 +2004,7 @@ IECore::ConstFloatVectorDataPtr Resample::computeChannelData( const std::string 
 			{
 				for( int ix = support.min.x; ix < support.max.x; ++ix )
 				{
-					channelSamples.push_back( &deepChannelSampler.sample( ix, iy )[0] );
+					channelSamples.push_back( deepChannelSampler.sample( ix, iy ).data() );
 				}
 			}
 
