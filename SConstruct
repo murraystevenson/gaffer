@@ -585,6 +585,7 @@ else:
 			"/D_USE_MATH_DEFINES",  # Required when permissive mode is off, for defining constants like M_PI used by OpenVDB
 			"/std:$CXXSTD",
 			"/DHAVE_SNPRINTF",  # Fix a legacy issue for MSVC versions < 2019
+			"/utf-8", # Required for fmtlib
 		]
 	)
 
