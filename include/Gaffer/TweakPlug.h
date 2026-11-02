@@ -193,6 +193,12 @@ class GAFFER_API TweakPlug : public Gaffer::ValuePlug
 
 };
 
+/// Allows `TweakPlug::Mode` to be passed directly to `fmt::format()`.
+inline int format_as( TweakPlug::Mode mode )
+{
+	return mode;
+}
+
 IE_CORE_DECLAREPTR( TweakPlug )
 
 /// Represents a collection of tweaks, and provides methods for applying them
