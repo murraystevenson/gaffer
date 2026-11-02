@@ -39,6 +39,7 @@
 #include "GafferOSL/OSLShader.h"
 
 #include "IECoreArnold/ParameterAlgo.h"
+#include "IECoreArnold/Private/AtStringFormat.h"
 
 #include "IECoreScene/Shader.h"
 #include "IECoreScene/ShaderNetworkAlgo.h"
