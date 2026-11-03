@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '*_maintenance'
+      - 'platform26Update'
   pull_request:
     branches:
       - '*'
@@ -37,6 +38,7 @@ jobs:
           linux-platform25,
           windows,
           macos,
+          macos-platform25,
         ]
 
         include:
@@ -97,6 +99,17 @@ jobs:
             containerImage:
             testArguments: -excludedCategories performance
             sconsCacheMegabytes: 400
+            jobs: 3
+
+          - name: macos-platform25
+            os: macos-15
+            buildType: RELEASE
+            publish: false
+            containerImage:
+            testArguments: -excludedCategories performance
+            sconsCacheMegabytes: 400
+            dependenciesURL: https://github.com/ImageEngine/cortex/releases/download/10.7.4.0/cortex-10.7.4.0-macos-platform25.tar.gz
+            extraBuildArguments: CXXSTD="c++17"
             jobs: 3
 
     runs-on: ${{ matrix.os }}
