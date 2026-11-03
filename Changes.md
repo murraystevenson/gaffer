@@ -59,6 +59,7 @@ Breaking Changes
 - Serialisation :
   - Removed deprecated `postSerialisationSignal()`.
   - Renamed `staticPostSerialisationSignal()` to `postSerialisationSignal()`.
+- GafferUI : Removed legacy compatibility code for PySide2 and PyQt.
 
 1.7.x.x (relative to 1.7.6.0)
 =======
