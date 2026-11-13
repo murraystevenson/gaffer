@@ -9,6 +9,11 @@ Improvements
   - Added a Sets section, with columns displaying the light's set membership.
   - Added "Add Selection To Set..." to the right-click menu.
 
+Fixes
+-----
+
+- PathListingWidget : Fixed compact column performance hazard with very large numbers of columns.
+
 1.7.7.0 (relative to 1.7.6.0)
 =======
 
