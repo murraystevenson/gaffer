@@ -356,15 +356,19 @@ class LightEditor( GafferSceneUI.SceneEditor ) :
 
 	def __filteredSetNames( self ) :
 
-		filterPattern = " ".join(
-			token if IECore.StringAlgo.hasWildcards( token ) else f"*{token}*"
-			for token in self.settings()["setColumnFilter"].getValue().lower().split()
-		) or "*"
+		filterPattern = self.__setColumnFilterPattern()
 
 		return [
 			n for n in self.__setNames
 			if not n.startswith( "__" ) and n != "soloLights" and IECore.StringAlgo.matchMultiple( n.lower(), filterPattern )
 		]
+
+	def __setColumnFilterPattern( self ) :
+
+		return " ".join(
+			token if IECore.StringAlgo.hasWildcards( token ) else f"*{token}*"
+			for token in self.settings()["setColumnFilter"].getValue().lower().split()
+		) or "*"
 
 	def __acquireSetColumn( self, setName ) :
 
@@ -474,6 +478,17 @@ class LightEditor( GafferSceneUI.SceneEditor ) :
 		nonEditableReason = self.__addToSets( paths, setNames )
 		if nonEditableReason :
 			GafferUI.PopupWindow.showWarning( nonEditableReason, parent = self.__pathListing )
+			return
+
+		# If the new or updated set is hidden by the current column filter,
+		# update the filter so the column is visible.
+		filterPattern = self.__setColumnFilterPattern()
+		setColumnFilter = self.settings()["setColumnFilter"].getValue()
+		for setName in setNames :
+			if not IECore.StringAlgo.matchMultiple( setName.lower(), filterPattern ) :
+				setColumnFilter += " " + setName
+
+		self.settings()["setColumnFilter"].setValue( setColumnFilter )
 
 	def __addToSets( self, paths, setNames ) :
 
