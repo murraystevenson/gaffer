@@ -357,10 +357,11 @@ class LightEditor( GafferSceneUI.SceneEditor ) :
 	def __filteredSetNames( self ) :
 
 		filterPattern = self.__setColumnFilterPattern()
+		internalSets = { "soloLights", "__lights", "__lightFilters", "__cameras", "__coordinateSystems" }
 
 		return [
 			n for n in self.__setNames
-			if not n.startswith( "__" ) and n != "soloLights" and IECore.StringAlgo.matchMultiple( n.lower(), filterPattern )
+			if n not in internalSets and IECore.StringAlgo.matchMultiple( n.lower(), filterPattern )
 		]
 
 	def __setColumnFilterPattern( self ) :
