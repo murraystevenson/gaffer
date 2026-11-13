@@ -40,6 +40,7 @@ import Gaffer
 import GafferTest
 import GafferUITest
 import GafferScene
+import GafferSceneTest
 import GafferSceneUI
 
 class SetMembershipInspectorTest( GafferUITest.TestCase ) :
@@ -549,6 +550,50 @@ class SetMembershipInspectorTest( GafferUITest.TestCase ) :
 			self.assertEqual( planeSet.match( path ), result )
 
 	@GafferTest.TestRunner.CategorisedTestMethod( { "inspector" } )
+	def testLightEditDefaultLightsMembership( self ) :
+
+		s = Gaffer.ScriptNode()
+
+		s["light"] = GafferSceneTest.TestLight()
+		s["light"]["sets"].setValue( "lightSet" )
+
+		s["group"] = GafferScene.Group()
+		s["group"]["in"][0].setInput( s["light"]["out"] )
+
+		inspection = self.__inspect( s["group"]["out"], "/group/light", "defaultLights", None )
+		self.assertTrue( inspection.source().isSame( s["light"]["defaultLight"] ) )
+		self.assertEqual( inspection.value(), IECore.BoolData( True ) )
+		self.assertTrue( inspection.acquireEdit().isSame( s["light"]["defaultLight"] ) )
+
+		# Remove from `defaultLights`
+
+		self.assertTrue( inspection.canEdit( IECore.BoolData( False ) ) )
+		inspection.edit( IECore.BoolData( False ) )
+
+		self.assertFalse( s["light"]["defaultLight"].getValue() )
+		self.assertEqual( s["light"]["sets"].getValue(), "lightSet" )
+		self.assertEqual(
+			s["group"]["out"].set( "defaultLights" ).value.match( "/group/light" ),
+			IECore.PathMatcher.Result.NoMatch
+		)
+
+		inspection = self.__inspect( s["group"]["out"], "/group/light", "defaultLights", None )
+		self.assertTrue( inspection.source().isSame( s["light"]["defaultLight"] ) )
+		self.assertEqual( inspection.value(), IECore.BoolData( False ) )
+
+		# And add it back
+
+		self.assertTrue( inspection.canEdit( IECore.BoolData( True ) ) )
+		inspection.edit( IECore.BoolData( True ) )
+
+		self.assertTrue( s["light"]["defaultLight"].getValue() )
+		self.assertEqual( s["light"]["sets"].getValue(), "lightSet" )
+		self.assertEqual(
+			s["group"]["out"].set( "defaultLights" ).value.match( "/group/light" ),
+			IECore.PathMatcher.Result.ExactMatch
+		)
+
+	@GafferTest.TestRunner.CategorisedTestMethod( { "inspector" } )
 	def testEditScopeEditSetMembership( self ) :
 
 		plane1 = GafferScene.Plane()
@@ -757,6 +802,34 @@ class SetMembershipInspectorTest( GafferUITest.TestCase ) :
 				GafferScene.EditScopeAlgo.getSetMembership( s["editScope1"], "/group/plane", "planeSetEditScope"),
 				GafferScene.EditScopeAlgo.SetMembership.Unchanged
 			)
+
+	@GafferTest.TestRunner.CategorisedTestMethod( { "inspector" } )
+	def testDisableDefaultLightsEdit( self ) :
+
+		s = Gaffer.ScriptNode()
+
+		s["light"] = GafferSceneTest.TestLight()
+		s["light"]["sets"].setValue( "lightSet" )
+
+		inspection = self.__inspect( s["light"]["out"], "/light", "defaultLights", None )
+		self.assertTrue( inspection.source().isSame( s["light"]["defaultLight"] ) )
+		self.assertFalse( inspection.canDisableEdit() )
+		self.assertEqual( inspection.nonDisableableReason(), "light.defaultLight has no edit to disable." )
+
+		s["light"]["defaultLight"].setValue( False )
+		inspection = self.__inspect( s["light"]["out"], "/light", "defaultLights", None )
+		self.assertTrue( inspection.canDisableEdit() )
+		self.assertEqual( inspection.nonDisableableReason(), "" )
+
+		inspection.disableEdit()
+		self.assertTrue( s["light"]["defaultLight"].isSetToDefault() )
+		self.assertTrue( s["light"]["defaultLight"].getValue() )
+		self.assertEqual( s["light"]["sets"].getValue(), "lightSet" )
+
+		Gaffer.MetadataAlgo.setReadOnly( s["light"]["defaultLight"], True )
+		inspection = self.__inspect( s["light"]["out"], "/light", "defaultLights", None )
+		self.assertFalse( inspection.canDisableEdit() )
+		self.assertEqual( inspection.nonDisableableReason(), "light.defaultLight is locked." )
 
 	@GafferTest.TestRunner.CategorisedTestMethod( { "inspector" } )
 	def testCanEdit( self ) :
