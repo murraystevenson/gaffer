@@ -500,7 +500,7 @@ class LightEditor( GafferSceneUI.SceneEditor ) :
 					self.settings()["__adaptedIn"], self.settings()["editScope"], setName
 				)
 				for path in paths :
-					context["scene:path"] = IECore.InternedStringVectorData( path[1:].split( "/" ) )
+					context["scene:path"] = GafferScene.ScenePlug.stringToPath( path )
 					inspection = inspector.inspect()
 					if inspection is None :
 						return "Cannot add \"{}\" to \"{}\".".format( path, setName )
