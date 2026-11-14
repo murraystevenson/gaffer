@@ -361,6 +361,19 @@ Gaffer.Metadata.registerNode(
 
 		},
 
+		"iff.dataType" : {
+
+			"description" :
+			"""
+			The data type to be written to the IFF file.
+			""",
+
+			"plugValueWidget:type" : "GafferUI.PresetsPlugValueWidget",
+			"preset:8-bit" : "uint8",
+			"preset:16-bit" : "uint16",
+
+		},
+
 		"jpeg" : {
 
 			"description" :
