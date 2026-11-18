@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '*_maintenance'
+      - 'oiio32Update'
   pull_request:
     branches:
       - '*'
