@@ -626,6 +626,10 @@ struct CellVariants
 };
 
 IECore::InternedString g_nameProperty( "name" );
+
+// Role used to query the selection state of a row as a whole.
+// Must be kept in sync with `_TreeView.RoleSelectionRole` in PathListingWidget.py.
+const int g_rowSelectionRole = Qt::UserRole + 2;
 IECore::InternedString g_childPlaceholder( "childPlaceholder" );
 
 template<typename T>
@@ -1079,6 +1083,11 @@ class PathModel : public QAbstractItemModel
 					return m_selection[c].match( namesForIndex( index ) );
 				}
 				return false;
+			}
+
+			if( role == g_rowSelectionRole )
+			{
+				return m_selectedPaths.match( namesForIndex( index ) );
 			}
 
 			Item *item = static_cast<Item *>( index.internalPointer() );

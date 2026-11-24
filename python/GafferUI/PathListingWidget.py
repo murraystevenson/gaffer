@@ -1035,6 +1035,9 @@ class PathListingWidget( GafferUI.Widget ) :
 # and knowledge of how to draw our PathMatcher selection.
 class _TreeView( QtWidgets.QTreeView ) :
 
+	# Must be kept in sync with `g_rowSelectionRole` in PathListingWidgetBinding.cpp.
+	RowSelectionRole = QtCore.Qt.UserRole + 2
+
 	def __init__( self ) :
 
 		QtWidgets.QTreeView.__init__( self )
@@ -1238,7 +1241,9 @@ class _TreeView( QtWidgets.QTreeView ) :
 		header = self.header()
 		height = self.viewport().height()
 
-		for i in range( 1, header.count() ) :
+		for i in self.__visibleSections() :
+			if header.visualIndex( i ) == 0 :
+				continue
 			x = header.sectionViewportPosition( i ) - 1
 			painter.drawLine( x, 0, x, height )
 
@@ -1286,27 +1291,47 @@ class _TreeView( QtWidgets.QTreeView ) :
 		elif pathMatch & IECore.PathMatcher.Result.DescendantMatch :
 			self.__drawHighlight( painter, rect, 50 )
 
+	def __visibleSections( self ) :
+
+		header = self.header()
+		if not header.count() :
+			return []
+
+		first = header.visualIndexAt( 0 )
+		if first < 0 :
+			return []
+
+		last = header.visualIndexAt( self.viewport().width() - 1 )
+		if last < 0 :
+			last = header.count() - 1
+
+		result = []
+		for visualIndex in range( first, last + 1 ) :
+			logicalIndex = header.logicalIndex( visualIndex )
+			if not header.isSectionHidden( logicalIndex ) :
+				result.append( logicalIndex )
+
+		return result
+
 	def __drawRowSelectionHighlight( self, painter, rect, index ) :
+
+		visibleSections = self.__visibleSections()
+		if not visibleSections :
+			return
 
 		header = self.header()
 
-		cellMatches = [
-			index.model().data(
-				index.siblingAtColumn( i ),
-				QtCore.Qt.UserRole
-			) for i in range( 0, header.count() )
-		]
+		rowSelection = index.model().data( index, self.RowSelectionRole )
+		descendantMatch = rowSelection & IECore.PathMatcher.Result.DescendantMatch
+		rowMatch = rowSelection & IECore.PathMatcher.Result.ExactMatch
 
-		descendantMatch = any( m & IECore.PathMatcher.Result.DescendantMatch for m in cellMatches )
-		rowMatch = any( m & IECore.PathMatcher.Result.ExactMatch for m in cellMatches )
-
-		for i in range( 0, header.count() ) :
-			cellMatch = cellMatches[i]
+		for i in visibleSections :
+			cellMatch = index.model().data( index.siblingAtColumn( i ), QtCore.Qt.UserRole )
 
 			left = header.sectionViewportPosition( i )
-			width = ( header.sectionViewportPosition( i + 1 ) - left ) if ( i < header.count() - 1 ) else ( rect.right() - left )
+			width = header.sectionSize( i ) if header.visualIndex( i ) < header.count() - 1 else ( rect.right() - left )
 
-			cellRect = QtCore.QRectF(left, rect.top(), width, rect.height() )
+			cellRect = QtCore.QRectF( left, rect.top(), width, rect.height() )
 
 			if cellMatch & IECore.PathMatcher.Result.ExactMatch :
 				self.__drawHighlight( painter, cellRect, 200 )

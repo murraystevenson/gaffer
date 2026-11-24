@@ -49,6 +49,7 @@ import GafferTest
 
 import GafferUI
 from GafferUI import _GafferUI
+from GafferUI.PathListingWidget import _TreeView
 import GafferUITest
 
 from Qt import QtCore, QtWidgets
@@ -2345,6 +2346,54 @@ class PathListingWidgetTest( GafferUITest.TestCase ) :
 		self.assertEqual( dataChanges, [] )
 		self.assertEqual( headerChanges, [] )
 		self.assertEqual( headerUpdates, [] )
+
+	def testRowSelectionRole( self ) :
+
+		widget = GafferUI.PathListingWidget(
+			path = Gaffer.DictPath( { "a" : { "b" : 1, "c" : 2 }, "d" : 3 }, "/" ),
+			columns = [
+				GafferUI.PathListingWidget.defaultNameColumn,
+				GafferUI.PathListingWidget.StandardColumn( "Value", "dict:value" ),
+			],
+			selectionMode = GafferUI.PathListingWidget.SelectionMode.Cells,
+			displayMode = GafferUI.PathListingWidget.DisplayMode.Tree,
+			sortable = False,
+		)
+		_GafferUI._pathListingWidgetAttachTester( GafferUI._qtAddress( widget._qtWidget() ) )
+
+		model = widget._qtWidget().model()
+		self.__expandModel( model )
+
+		aIndex = model.index( 0, 0 )
+		bIndex = model.index( 0, 0, aIndex )
+		cIndex = model.index( 1, 0, aIndex )
+		dIndex = model.index( 1, 0 )
+
+		self.assertEqual( model.data( aIndex ), "a" )
+		self.assertEqual( model.data( bIndex ), "b" )
+		self.assertEqual( model.data( cIndex ), "c" )
+		self.assertEqual( model.data( dIndex ), "d" )
+
+		widget.setSelection( [ IECore.PathMatcher(), IECore.PathMatcher( [ "/a/b" ] ) ] )
+		for column in range( 0, 2 ) :
+			self.assertEqual( model.data( aIndex.siblingAtColumn( column ), _TreeView.RowSelectionRole ), IECore.PathMatcher.Result.DescendantMatch )
+			self.assertEqual( model.data( bIndex.siblingAtColumn( column ), _TreeView.RowSelectionRole ), IECore.PathMatcher.Result.ExactMatch )
+			self.assertEqual( model.data( cIndex.siblingAtColumn( column ), _TreeView.RowSelectionRole ), IECore.PathMatcher.Result.NoMatch )
+			self.assertEqual( model.data( dIndex.siblingAtColumn( column ), _TreeView.RowSelectionRole ), IECore.PathMatcher.Result.NoMatch )
+
+		widget.setSelection( [ IECore.PathMatcher( [ "/d" ] ), IECore.PathMatcher() ] )
+		for column in range( 0, 2 ) :
+			self.assertEqual( model.data( aIndex.siblingAtColumn( column ), _TreeView.RowSelectionRole ), IECore.PathMatcher.Result.NoMatch )
+			self.assertEqual( model.data( bIndex.siblingAtColumn( column ), _TreeView.RowSelectionRole ), IECore.PathMatcher.Result.NoMatch )
+			self.assertEqual( model.data( cIndex.siblingAtColumn( column ), _TreeView.RowSelectionRole ), IECore.PathMatcher.Result.NoMatch )
+			self.assertEqual( model.data( dIndex.siblingAtColumn( column ), _TreeView.RowSelectionRole ), IECore.PathMatcher.Result.ExactMatch )
+
+		widget.setSelection( [ IECore.PathMatcher( [ "/d" ] ), IECore.PathMatcher( [ "/a" ] ) ] )
+		for column in range( 0, 2 ) :
+			self.assertEqual( model.data( aIndex.siblingAtColumn( column ), _TreeView.RowSelectionRole ), IECore.PathMatcher.Result.ExactMatch )
+			self.assertEqual( model.data( bIndex.siblingAtColumn( column ), _TreeView.RowSelectionRole ), IECore.PathMatcher.Result.AncestorMatch )
+			self.assertEqual( model.data( cIndex.siblingAtColumn( column ), _TreeView.RowSelectionRole ), IECore.PathMatcher.Result.AncestorMatch )
+			self.assertEqual( model.data( dIndex.siblingAtColumn( column ), _TreeView.RowSelectionRole ), IECore.PathMatcher.Result.ExactMatch )
 
 	@staticmethod
 	def __emitPathChanged( widget ) :
