@@ -531,7 +531,8 @@ struct CellVariants
 			m_toolTip( dataToVariant( cellData.toolTip.get(), Qt::ToolTipRole ) ),
 			m_sort( dataToVariant( cellData.sortValue.get(), SortRole ) ),
 			m_foreground( dataToVariant( cellData.foreground.get(), Qt::ForegroundRole ) ),
-			m_abbreviation( dataToVariant( cellData.abbreviation.get(), AbbreviationRole ) )
+			m_abbreviation( dataToVariant( cellData.abbreviation.get(), AbbreviationRole ) ),
+			m_cellDataHash( cellDataHash( cellData ) )
 	{
 		if( !m_sort.isValid() )
 		{
@@ -570,18 +571,47 @@ struct CellVariants
 
 	bool operator== ( const CellVariants &rhs ) const
 	{
-		return
-			m_display == rhs.m_display &&
-			m_checkState == rhs.m_checkState &&
-			m_decoration == rhs.m_decoration &&
-			m_background == rhs.m_background &&
-			m_toolTip == rhs.m_toolTip &&
-			m_foreground == rhs.m_foreground &&
-			m_abbreviation == rhs.m_abbreviation
-		;
+		return m_cellDataHash == rhs.m_cellDataHash;
 	}
 
 	private :
+
+		static IECore::MurmurHash cellDataHash( const GafferUI::PathColumn::CellData &cellData )
+		{
+			IECore::MurmurHash result;
+			if( cellData.value )
+			{
+				result.append( 0 );
+				cellData.value->hash( result );
+			}
+			if( cellData.icon )
+			{
+				result.append( 1 );
+				cellData.icon->hash( result );
+			}
+			if( cellData.background )
+			{
+				result.append( 2 );
+				cellData.background->hash( result );
+			}
+			if( cellData.toolTip )
+			{
+				result.append( 3 );
+				cellData.toolTip->hash( result );
+			}
+			if( cellData.foreground )
+			{
+				result.append( 4 );
+				cellData.foreground->hash( result );
+			}
+			if( cellData.abbreviation )
+			{
+				result.append( 5 );
+				cellData.abbreviation->hash( result );
+			}
+
+			return result;
+		}
 
 		QVariant m_display;
 		QVariant m_checkState;
@@ -591,6 +621,7 @@ struct CellVariants
 		QVariant m_sort;
 		QVariant m_foreground;
 		QVariant m_abbreviation;
+		IECore::MurmurHash m_cellDataHash;
 
 };
 

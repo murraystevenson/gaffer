@@ -2286,6 +2286,67 @@ class PathListingWidgetTest( GafferUITest.TestCase ) :
 		self.assertEqual( headerText( 1 ), "Min Bounces" )
 		self.assertEqual( headerText( 2 ), "Other Value" )
 
+	def testUnchangedCellsDontEmitDataChanged( self ) :
+
+		class IconColumn( GafferUI.PathColumn ) :
+
+			def __init__( self ) :
+
+				GafferUI.PathColumn.__init__( self )
+
+			def cellData( self, path, canceller = None ) :
+
+				return self.CellData(
+					value = str( path ),
+					icon = "errorSmall.png",
+					background = imath.Color4f( 0.1, 0.2, 0.3, 1 ),
+					toolTip = "Tip",
+				)
+
+			def headerData( self, rootPath, canceller = None ) :
+
+				return self.CellData( value = "Icon", icon = "errorSmall.png", toolTip = "Header Tip" )
+
+		widget = GafferUI.PathListingWidget(
+			path = Gaffer.DictPath( { "a" : 1, "b" : 2 }, "/" ),
+			columns = [ GafferUI.PathListingWidget.defaultNameColumn, IconColumn() ],
+			sortable = False,
+		)
+		_GafferUI._pathListingWidgetAttachTester( GafferUI._qtAddress( widget._qtWidget() ) )
+
+		model = widget._qtWidget().model()
+		self.__expandModel( model, queryData = True )
+		model.headerData( 1, QtCore.Qt.Horizontal )
+		_GafferUI._pathModelWaitForPendingUpdates( GafferUI._qtAddress( model ) )
+
+		self.assertEqual( model.data( model.index( 0, 1 ) ), "/a" )
+		self.assertIsNotNone( model.data( model.index( 0, 1 ), QtCore.Qt.DecorationRole ) )
+		self.assertEqual( model.headerData( 1, QtCore.Qt.Horizontal ), "Icon" )
+		self.assertIsNotNone( model.headerData( 1, QtCore.Qt.Horizontal, QtCore.Qt.DecorationRole ) )
+
+		dataChanges = []
+		model.dataChanged.connect( lambda : dataChanges.append( True ) )
+		headerChanges = []
+		model.headerDataChanged.connect( lambda : headerChanges.append( True ) )
+		headerUpdates = []
+		model.headerUpdateFinished.connect( lambda : headerUpdates.append( True ) )
+
+		# Dirty everything without change. Nothing should be signalled, but
+		# a current bug results in headerUpdateFinished still being emitted.
+
+		widget.getColumns()[1].changedSignal()( widget.getColumns()[1] )
+		_GafferUI._pathModelWaitForPendingUpdates( GafferUI._qtAddress( model ) )
+
+		self.assertEqual( dataChanges, [] )
+		self.assertEqual( headerChanges, [] )
+		self.assertEqual( headerUpdates, [ True ] )
+
+		self.__emitPathChanged( widget )
+
+		self.assertEqual( dataChanges, [] )
+		self.assertEqual( headerChanges, [] )
+		self.assertEqual( headerUpdates, [ True, True ] )
+
 	@staticmethod
 	def __emitPathChanged( widget ) :
 
