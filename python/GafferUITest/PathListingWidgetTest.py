@@ -2395,6 +2395,95 @@ class PathListingWidgetTest( GafferUITest.TestCase ) :
 			self.assertEqual( model.data( cIndex.siblingAtColumn( column ), _TreeView.RowSelectionRole ), IECore.PathMatcher.Result.AncestorMatch )
 			self.assertEqual( model.data( dIndex.siblingAtColumn( column ), _TreeView.RowSelectionRole ), IECore.PathMatcher.Result.ExactMatch )
 
+	def testVisibleColumnPriorityUpdate( self ) :
+
+		class TestColumn( GafferUI.PathColumn ) :
+
+			def __init__( self, index, log ) :
+
+				GafferUI.PathColumn.__init__( self )
+
+				self.index = index
+				self.offset = 0
+				self.log = log
+
+			def setOffset( self, offset ) :
+
+				self.offset = offset
+				self.changedSignal()( self )
+
+			def cellData( self, path, canceller = None ) :
+
+				self.log.append( ( str( path ), self.index ) )
+				return self.CellData( value = self.index + self.offset )
+
+			def headerData( self, rootPath, canceller = None ) :
+
+				return self.CellData( value = "Title" )
+
+		numRows = 50
+		numColumns = 40
+		log = []
+
+		testColumns = [ TestColumn( i, log ) for i in range( 1, numColumns + 1 ) ]
+
+		with GafferUI.Window() as window :
+			widget = GafferUI.PathListingWidget(
+				path = Gaffer.DictPath( { str( i ) : i for i in range( 0, numRows ) }, "/" ),
+				columns = [ GafferUI.PathListingWidget.defaultNameColumn ] + testColumns,
+				sortable = False,
+				displayMode = GafferUI.PathListingWidget.DisplayMode.List,
+			)
+
+		window._qtWidget().resize( 400, 300 )
+		window.setVisible( True )
+		self.waitForIdle( 1000 )
+
+		treeView = widget._qtWidget()
+		model = treeView.model()
+		_GafferUI._pathModelWaitForPendingUpdates( GafferUI._qtAddress( model ) )
+		self.assertEqual( model.data( model.index( 0, 1 ) ), 1 )
+
+		# Scroll to the last column and record the visible columns.
+		treeView.horizontalScrollBar().setValue( treeView.horizontalScrollBar().maximum() )
+		header = treeView.header()
+		visibleColumns = {
+			header.logicalIndex( v ) for v in range( header.visualIndexAt( 0 ), header.visualIndexAt( treeView.viewport().width() - 1 ) + 1 )
+		}
+
+		visibleRows = set()
+		for row in range( 0, numRows ) :
+			rect = treeView.visualRect( model.index( row, 0 ) )
+			if rect.bottom() >= 0 and rect.top() < treeView.height() :
+				visibleRows.add( row )
+
+		self.assertLess( len( visibleColumns ), numColumns + 1 )
+		self.assertGreater( len( visibleRows ), 0 )
+
+		priorityCells = {
+			( "/{}".format( row ), column )
+			for row in visibleRows for column in visibleColumns if column > 0
+		}
+
+		del log[:]
+		for c in testColumns :
+			c.setOffset( 100 )
+		_GafferUI._pathModelWaitForPendingUpdates( GafferUI._qtAddress( model ) )
+
+		# The priority cells should have been computed first.
+		self.assertEqual( set( log[:len( priorityCells )] ), priorityCells )
+
+		# Every cell should have only been computed once.
+		self.assertEqual( len( log ), numRows * numColumns )
+		self.assertEqual(
+			set( log ),
+			{ ( "/{}".format( row ), c.index ) for row in range( 0, numRows ) for c in testColumns }
+		)
+
+		for row in range( 0, numRows ) :
+			for c in testColumns :
+				self.assertEqual( model.data( model.index( row, c.index ) ), c.index + 100 )
+
 	@staticmethod
 	def __emitPathChanged( widget ) :
 

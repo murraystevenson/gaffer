@@ -79,6 +79,7 @@
 #include "QtGui/QPainter"
 
 #include "QtWidgets/QFileIconProvider"
+#include "QtWidgets/QHeaderView"
 #include "QtWidgets/QTreeView"
 #include "QtWidgets/QStyledItemDelegate"
 
@@ -1264,7 +1265,7 @@ class PathModel : public QAbstractItemModel
 				// background. Likewise, we take a copy of the Path to work
 				// with, because anyone could modify that on the UI thread as it
 				// is a public member of PathListingWidget.
-				[this, workingPath = m_rootPath->copy(), expandedPaths = IECore::PathMatcher( m_expandedPaths ), priorityPaths = visiblePaths() ] {
+				[this, workingPath = m_rootPath->copy(), expandedPaths = IECore::PathMatcher( m_expandedPaths ), visible = visibleCells()] {
 					try
 					{
 						const IECore::Canceller *canceller = Context::current()->canceller();
@@ -1279,6 +1280,18 @@ class PathModel : public QAbstractItemModel
 									}
 								}
 							);
+						}
+
+						if( visible.columns.size() < m_columns.size() )
+						{
+							// We're viewing a subset of columns, so update those first.
+							updateVisibleCells( workingPath.get(), visible, canceller );
+						}
+
+						IECore::PathMatcher priorityPaths;
+						for( const auto &row : visible.rows )
+						{
+							priorityPaths.addPath( row.names );
 						}
 						m_rootItem->update( this, workingPath.get(), expandedPaths, priorityPaths, canceller );
 						queueEdit(
@@ -1483,6 +1496,7 @@ class PathModel : public QAbstractItemModel
 					m_parent( parent ),
 					m_row( -1 ), // Assigned true value in `updateChildItems()`
 					m_dataState( State::Unrequested ),
+					m_priorityEditQueued( false ),
 					m_childItemsState( State::Unrequested ),
 					m_expansionDirty( true ),
 					m_expandedInTreeView( false )
@@ -1642,6 +1656,64 @@ class PathModel : public QAbstractItemModel
 				return m_data[column].variant( role );
 			}
 
+			// Computes the data for `columns` and queues an edit to display
+			// it ahead of the rest of the update.
+			void updatePriorityData( PathModel *model, const Path *path, const std::vector<size_t> &columns, const IECore::Canceller *canceller )
+			{
+				if( m_dataState != State::Dirty )
+				{
+					// Nothing to update.
+					return;
+				}
+
+				bool valid = false;
+				try
+				{
+					valid = path->isValid( canceller );
+				}
+				catch( const std::exception & )
+				{
+					// Leave errors to be reported by the main update.
+				}
+				if( !valid )
+				{
+					return;
+				}
+
+				m_priorityData.clear();
+				m_priorityEditQueued = false;
+
+				bool changed = false;
+				for( size_t column : columns )
+				{
+					CellVariants cell = cellVariants( model->m_columns[column].get(), path, canceller );
+					changed = changed || column >= m_data.size() || !( cell == m_data[column] );
+					m_priorityData.push_back( { column, std::move( cell ) } );
+				}
+
+				if( !changed )
+				{
+					return;
+				}
+
+				m_priorityEditQueued = true;
+				model->queueEdit(
+
+					[this, model, priorityData = m_priorityData] () {
+
+						m_data.resize( model->m_columns.size() );
+						for( const auto &[column, cell] : priorityData )
+						{
+							m_data[column] = cell;
+						}
+
+						model->dataChanged( model->createIndex( m_row, 0, this ), model->createIndex( m_row, model->m_columns.size() - 1, this ) );
+
+					}
+
+				);
+			}
+
 			using ChildContainer = std::vector<Ptr>;
 
 			ChildContainer &childItems( const PathModel *model )
@@ -1657,9 +1729,14 @@ class PathModel : public QAbstractItemModel
 
 				void dirtyWalk( bool dirtyChildItems, bool dirtyData, const std::vector<int> *dataMapping )
 				{
-					if( dirtyData && ( m_dataState == State::Clean ) )
+					if( dirtyData )
 					{
-						m_dataState = State::Dirty;
+						if( m_dataState == State::Clean )
+						{
+							m_dataState = State::Dirty;
+						}
+						m_priorityData.clear();
+						m_priorityEditQueued = false;
 					}
 					if( dataMapping )
 					{
@@ -1673,6 +1750,36 @@ class PathModel : public QAbstractItemModel
 					{
 						child->dirtyWalk( dirtyChildItems, dirtyData, dataMapping );
 					}
+				}
+
+				static CellVariants cellVariants( const GafferUI::PathColumn *column, const Path *path, const IECore::Canceller *canceller )
+				{
+					try
+					{
+						return CellVariants( column->cellData( *path, canceller ) );
+					}
+					catch( const IECore::Cancelled & )
+					{
+						throw;
+					}
+					catch( const std::exception &e )
+					{
+						// Qt doesn't use exceptions for error handling,
+						// so we must suppress them.
+						return CellVariants(
+							GafferUI::PathColumn::CellData(
+								nullptr,  // value
+								new IECore::StringData( "errorSmall.png" ),  // icon
+								nullptr,  // background
+								new IECore::StringData( e.what() )  // toolTip
+							)
+						);
+					}
+					catch( ... )
+					{
+						IECore::msg( IECore::Msg::Warning, "PathListingWidget", "Unknown error" );
+					}
+					return CellVariants();
 				}
 
 				static QVariant dataForSort( const std::vector<CellVariants> &data, PathModel *model )
@@ -1698,43 +1805,29 @@ class PathModel : public QAbstractItemModel
 					// assumption that access to one is likely to indicate upcoming
 					// accesses to the others.
 
-					std::vector<CellVariants> newData;
+					std::vector<CellVariants> newData( model->m_columns.size() );
+					std::vector<bool> computed( newData.size(), false );
 
-					newData.reserve( model->m_columns.size() );
-
-					for( int i = 0, e = model->m_columns.size(); i < e; ++i )
+					// Reuse any cells already computed by `updatePriorityData()`.
+					for( const auto &[column, cell] : m_priorityData )
 					{
-						CellVariants cellVariants;
-						try
-						{
-							cellVariants = CellVariants( model->m_columns[i]->cellData( *path, canceller ) );
-						}
-						catch( const IECore::Cancelled & )
-						{
-							throw;
-						}
-						catch( const std::exception &e )
-						{
-							// Qt doesn't use exceptions for error handling,
-							// so we must suppress them.
-							cellVariants = CellVariants(
-								GafferUI::PathColumn::CellData(
-									nullptr,  // value
-									new IECore::StringData( "errorSmall.png" ),  // icon
-									nullptr,  // background
-									new IECore::StringData( e.what() )  // toolTip
-								)
-							);
-						}
-						catch( ... )
-						{
-							IECore::msg( IECore::Msg::Warning, "PathListingWidget", "Unknown error" );
-						}
-
-						newData.push_back( cellVariants );
+						newData[column] = cell;
+						computed[column] = true;
 					}
 
-					if( newData == m_data )
+					for( size_t i = 0, e = newData.size(); i < e; ++i )
+					{
+						if( !computed[i] )
+						{
+							newData[i] = cellVariants( model->m_columns[i].get(), path, canceller );
+						}
+					}
+
+					m_priorityData.clear();
+					const bool priorityEditQueued = m_priorityEditQueued;
+					m_priorityEditQueued = false;
+
+					if( !priorityEditQueued && newData == m_data )
 					{
 						// No update necessary.
 						m_dataState = State::Clean;
@@ -2041,6 +2134,10 @@ class PathModel : public QAbstractItemModel
 				std::atomic<State> m_dataState;
 				std::vector<CellVariants> m_data;
 
+				// Cells computed by `updatePriorityData()` for reuse in `updateData()`.
+				std::vector<std::pair<size_t, CellVariants>> m_priorityData;
+				bool m_priorityEditQueued;
+
 				std::atomic<State> m_childItemsState;
 				// Children are held by `shared_ptr` in order to support
 				// asynchronous update. Newly created children aren't owned
@@ -2197,21 +2294,73 @@ class PathModel : public QAbstractItemModel
 			}
 		}
 
-		IECore::PathMatcher visiblePaths() const
+		struct VisibleRow
+		{
+			Item::Ptr item;
+			Path::Names names;
+		};
+
+		struct VisibleCells
+		{
+			std::vector<VisibleRow> rows;
+			std::vector<size_t> columns;
+		};
+
+		VisibleCells visibleCells() const
 		{
 			QTreeView *treeView = static_cast<QTreeView *>( QObject::parent() );
 			const int height = treeView->height();
 
-			IECore::PathMatcher result;
+			VisibleCells result;
+
+			if( treeView->isVisible() )
+			{
+				const QHeaderView *header = treeView->header();
+				int first = header->visualIndexAt( 0 );
+				int last = header->visualIndexAt( treeView->viewport()->width() - 1 );
+				if( first >= 0 )
+				{
+					if( last < 0 )
+					{
+						last = header->count() - 1;
+					}
+					for( int visualIndex = first; visualIndex <= last; ++visualIndex )
+					{
+						const int logicalIndex = header->logicalIndex( visualIndex );
+						if( logicalIndex >= 0 && logicalIndex < (int)m_columns.size() && !header->isSectionHidden( logicalIndex ) )
+						{
+							result.columns.push_back( logicalIndex );
+						}
+					}
+				}
+			}
 
 			QModelIndex index = treeView->indexAt( QPoint( 0, 0 ) );
 			while( index.isValid() && treeView->visualRect( index ).top() < height )
 			{
-				result.addPath( namesForIndex( index ) );
+				result.rows.push_back( { static_cast<Item *>( index.internalPointer() ), namesForIndex( index ) } );
 				index = treeView->indexBelow( index );
 			}
 
 			return result;
+		}
+
+		void updateVisibleCells( Path *path, const VisibleCells &visible, const IECore::Canceller *canceller )
+		{
+			if( visible.rows.empty() || visible.columns.empty() )
+			{
+				return;
+			}
+
+			const Path::Names rootNames = path->names();
+			for( const auto &row : visible.rows )
+			{
+				IECore::Canceller::check( canceller );
+				path->set( 0, path->names().size(), row.names );
+				row.item->updatePriorityData( this, path, visible.columns, canceller );
+			}
+			// The main update starts from `path`, so we must restore the root.
+			path->set( 0, path->names().size(), rootNames );
 		}
 
 		// Column change handling
