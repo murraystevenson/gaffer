@@ -2331,21 +2331,20 @@ class PathListingWidgetTest( GafferUITest.TestCase ) :
 		headerUpdates = []
 		model.headerUpdateFinished.connect( lambda : headerUpdates.append( True ) )
 
-		# Dirty everything without change. Nothing should be signalled, but
-		# a current bug results in headerUpdateFinished still being emitted.
+		# Dirty everything without change. Nothing should be signalled.
 
 		widget.getColumns()[1].changedSignal()( widget.getColumns()[1] )
 		_GafferUI._pathModelWaitForPendingUpdates( GafferUI._qtAddress( model ) )
 
 		self.assertEqual( dataChanges, [] )
 		self.assertEqual( headerChanges, [] )
-		self.assertEqual( headerUpdates, [ True ] )
+		self.assertEqual( headerUpdates, [] )
 
 		self.__emitPathChanged( widget )
 
 		self.assertEqual( dataChanges, [] )
 		self.assertEqual( headerChanges, [] )
-		self.assertEqual( headerUpdates, [ True, True ] )
+		self.assertEqual( headerUpdates, [] )
 
 	@staticmethod
 	def __emitPathChanged( widget ) :

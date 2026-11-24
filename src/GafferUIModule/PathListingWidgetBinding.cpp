@@ -1259,15 +1259,18 @@ class PathModel : public QAbstractItemModel
 					try
 					{
 						const IECore::Canceller *canceller = Context::current()->canceller();
-						updateHeaderData( canceller );
-						queueEdit(
-							[this] () {
-								if( !m_blockUpdateFinished )
-								{
-									headerUpdateFinished();
+						const bool headerChanged = updateHeaderData( canceller );
+						if( headerChanged )
+						{
+							queueEdit(
+								[this] () {
+									if( !m_blockUpdateFinished )
+									{
+										headerUpdateFinished();
+									}
 								}
-							}
-						);
+							);
+						}
 						m_rootItem->update( this, workingPath.get(), expandedPaths, priorityPaths, canceller );
 						queueEdit(
 							[this] () {
@@ -1402,11 +1405,11 @@ class PathModel : public QAbstractItemModel
 			return false;
 		}
 
-		void updateHeaderData( const IECore::Canceller *canceller )
+		bool updateHeaderData( const IECore::Canceller *canceller )
 		{
 			if( m_headerDataState != State::Dirty )
 			{
-				return;
+				return false;
 			}
 
 			std::vector<CellVariants> newHeaderData;
@@ -1418,7 +1421,7 @@ class PathModel : public QAbstractItemModel
 			if( m_headerData == newHeaderData )
 			{
 				m_headerDataState = State::Clean;
-				return;
+				return false;
 			}
 
 			queueEdit(
@@ -1432,6 +1435,8 @@ class PathModel : public QAbstractItemModel
 				}
 
 			);
+
+			return true;
 		}
 
 		// State transitions :

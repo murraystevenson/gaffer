@@ -24,7 +24,9 @@ Fixes
 - Plug : Fixed potential hang calling `removeOutputs()` from Python.
 - Display : Fixed potential hang calling `setDriver()` from Python.
 - Viewer, InteractiveRender : Fixed bug preventing updates to PointInstancers when the `render:includedPurposes` or `render:deformationBlur` options were changed.
-- PathListingWidget : Fixed redundant updates of cells and headers containing icons.
+- PathListingWidget :
+  - Fixed redundant updates of cells and headers containing icons.
+  - Fixed redundant column width updates.
 
 API
 ---
