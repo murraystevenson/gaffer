@@ -80,6 +80,7 @@
 
 #include "QtWidgets/QFileIconProvider"
 #include "QtWidgets/QHeaderView"
+#include "QtWidgets/QScrollBar"
 #include "QtWidgets/QTreeView"
 #include "QtWidgets/QStyledItemDelegate"
 
@@ -677,6 +678,8 @@ class PathModel : public QAbstractItemModel
 		{
 			connect( parent, &QTreeView::expanded, this, &PathModel::treeViewExpanded );
 			connect( parent, &QTreeView::collapsed, this, &PathModel::treeViewCollapsed );
+			connect( parent->horizontalScrollBar(), &QScrollBar::valueChanged, this, &PathModel::viewportChanged );
+			connect( parent->verticalScrollBar(), &QScrollBar::valueChanged, this, &PathModel::viewportChanged );
 			parent->installEventFilter( this );
 			parent->setModel( this );
 		}
@@ -1419,6 +1422,9 @@ class PathModel : public QAbstractItemModel
 					break;
 				case QEvent::Hide :
 					cancelUpdate();
+					break;
+				case QEvent::Resize :
+					viewportChanged();
 					break;
 				default :
 					break;
@@ -2361,6 +2367,16 @@ class PathModel : public QAbstractItemModel
 			}
 			// The main update starts from `path`, so we must restore the root.
 			path->set( 0, path->names().size(), rootNames );
+		}
+
+		void viewportChanged()
+		{
+			if( m_updateTask && m_updateTask->status() < Gaffer::BackgroundTask::Completed )
+			{
+				// Reschedule a pending or running update to prioritise
+				// the newly visible cells.
+				scheduleUpdate();
+			}
 		}
 
 		// Column change handling
